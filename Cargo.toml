@@ -1,0 +1,19 @@
+[package]
+name = "roadsim2d"
+version = "0.1.0"
+authors = ["clynamen <clynamen@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+piston_window = "0.70.0"
+cgmath = "*"
+rand = "*"
+rosrust = "0.6.5"
+rosrust_codegen = "0.6.5"
+serde = "1.0.25"
+serde_derive = "1.0.25"
+euclid = "*"
+conrod = "*"
+
+[build-dependencies]
+rosrust_codegen = "0.6.5"
