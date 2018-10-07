@@ -40,27 +40,27 @@ impl SimulationObject for Camera {
     // fn render(&self, _: Context, _: &mut GlGraphics) {}
 
     fn update(&mut self, ctx: &UpdateContext) {
-        // macro_rules! if_key {
-        //     ($key:path : $ctx:ident $then:block) => {
-        //         if $ctx.buttons.contains(&Button::Keyboard($key)) {
-        //             $then
-        //         }
-        //     };
-        // }
+        macro_rules! if_key {
+            ($key:path : $ctx:ident $then:block) => {
+                if $ctx.buttons.contains(&Button::Keyboard($key)) {
+                    $then
+                }
+            };
+        }
 
-        // let scroll_speed = 0.7;
-        // if_key! [ Key::Up : ctx { self.trans_vel = self.trans_vel + Vec2::new(0.0, scroll_speed); }];
-        // if_key! [ Key::Down : ctx { self.trans_vel = self.trans_vel + Vec2::new(0.0, -scroll_speed); }];
-        // if_key! [ Key::Left : ctx { self.trans_vel = self.trans_vel + Vec2::new(scroll_speed, 0.0); }];
-        // if_key! [ Key::Right : ctx { self.trans_vel = self.trans_vel + Vec2::new(-scroll_speed, 0.0); }];
+        let scroll_speed = 0.7;
+        if_key! [ Key::Up : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed}; }];
+        if_key! [ Key::Down : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed}; }];
+        if_key! [ Key::Left : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed, y: 0.0}; }];
+        if_key! [ Key::Right : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed, y: 0.0}; }];
 
-        // let zoom_amount = 0.005;
-        // if_key! [ Key::PageUp : ctx { self.zoom_vel += zoom_amount; }];
-        // if_key! [ Key::PageDown : ctx { self.zoom_vel -= zoom_amount; }];
+        let zoom_amount = 0.005;
+        if_key! [ Key::E : ctx { self.zoom_vel += zoom_amount; }];
+        if_key! [ Key::Q : ctx { self.zoom_vel -= zoom_amount; }];
 
-        // self.trans = self.trans + self.trans_vel;
-        // self.trans_vel = self.trans_vel * 0.9;
-        // self.zoom *= 1.0 + self.zoom_vel;
-        // self.zoom_vel *= 0.9;
+        self.trans = self.trans + self.trans_vel;
+        self.trans_vel = self.trans_vel * 0.9;
+        self.zoom *= 1.0 + self.zoom_vel;
+        self.zoom_vel *= 0.9;
     }
 }
