@@ -12,6 +12,10 @@ extern crate rosrust_codegen;
 
 rosmsg_include!();
 
+mod camera;
+mod simulation;
+mod primitives;
+
 use std::time;
 use piston_window::*;
 use cgmath::*;
@@ -21,12 +25,10 @@ use rand::Rng;
 use rosrust::api::raii::Publisher;
 use euclid::*;
 use conrod::color::*;
+use self::camera::*;
+use self::primitives::*;
 
 struct WorldUnit {}
-
-type Point2f64 = Point2<f64>;
-type Vec2f64 = Vector2<f64>;
-type Size2f64 = Size2D<f64>;
 
 pub fn random_color() -> Color {
     rgb(::rand::random(), ::rand::random(), ::rand::random())
@@ -62,13 +64,13 @@ struct Pose2DF64 {
 
 #[derive(Clone, Debug)]
 struct Car {
+    id : u64,
     pose : Pose2DF64,     
     longitudinal_speed : f32, 
     yaw_rate: f32,
     bb_size : Size2f64,
     color: Color
 }
-
 
 
 impl Car {
@@ -95,7 +97,7 @@ impl IbeoPublisher {
     fn try_new() -> Option<IbeoPublisher> {
         let ros_not_available_error_msg = "roscore not started or it is not possible to connect to it";
         let ros_init_result = rosrust::try_init("roadsim2d");
-        if(ros_init_result.is_err()) {
+        if ros_init_result.is_err() {
             None            
         } else {
             let ibeo_vehicle_pub = rosrust::publish("/roadsim2d/vehicle_ibeo").expect(ros_not_available_error_msg);
@@ -128,11 +130,31 @@ impl VehicleStatesListener for IbeoPublisher {
 
 }
 
-fn random_car() -> Car {
+struct IdProvider {
+    last_id : u64,
+}
+
+impl IdProvider {
+    fn new() -> IdProvider {
+        IdProvider { 
+            last_id: 0u64
+        }
+    }
+    fn next(&mut self) -> u64 {
+        let next_id = self.last_id;
+        self.last_id += 1;
+        next_id
+    }
+
+}
+
+fn random_car(id_provider: &mut IdProvider) -> Car {
 
     let bb_width = rand::thread_rng().gen_range(100.0, 300.0);
         
-    return Car{pose: Pose2DF64 {center: Point2f64{
+    return Car{
+        id: id_provider.next(),
+        pose: Pose2DF64 {center: Point2f64{
         x: rand::thread_rng().gen_range(-400.0, 400.0), 
         y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
         yaw: 1.0}, 
@@ -148,16 +170,19 @@ fn main() {
         WindowSettings::new("Hello Piston!", [640, 480])
         .exit_on_esc(true).build().expect("Unable to create piston application");
 
-    let mut cars = vec![
-        random_car(),
-        random_car(),
-        random_car(),
-    ];
+    let mut id_provider = IdProvider::new();
+
+    // let mut cars = vec![
+    //     random_car(),
+    //     random_car(),
+    //     random_car(),
+    // ];
+    let mut cars : Vec<Car> = (0..3).map(|x| random_car( &mut id_provider ) ).collect();
     
     let mut vehicle_state_listeners : Vec<Box<VehicleStatesListener>> = Vec::new();
 
     let ibeo_publisher = IbeoPublisher::try_new(); 
-    if(ibeo_publisher.is_some()) {
+    if ibeo_publisher.is_some() {
         vehicle_state_listeners.push(Box::new(ibeo_publisher.unwrap()));
         println!("Added ROS publisher");
     } else {
@@ -166,6 +191,8 @@ fn main() {
 
     let previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
+
+    let mut camera = Camera::new( Vec2f64{x: 0.0, y: 0.0}, 0.0);
 
     while let Some(event) = window.next() {
         let now = time::Instant::now();

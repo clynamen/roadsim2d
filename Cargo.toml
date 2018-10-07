@@ -5,6 +5,7 @@ authors = ["clynamen <clynamen@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+piston = "*"
 piston_window = "0.70.0"
 cgmath = "*"
 rand = "*"
