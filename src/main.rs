@@ -16,15 +16,18 @@ extern crate rosrust_codegen;
 rosmsg_include!();
 
 mod camera;
+mod car;
 mod simulation;
 mod primitives;
+mod color_utils;
+mod ibeo;
 
 use std::time;
 use piston_window::*;
+use piston::event_loop::*;
 use cgmath::*;
 use rand::distributions::{IndependentSample, Range};
 use rand::Rng;
-use piston::event_loop::*;
 //use rosrust::PublisherStream;
 use rosrust::api::raii::Publisher;
 use euclid::*;
@@ -32,113 +35,15 @@ use conrod::color::*;
 use self::camera::*;
 use self::primitives::*;
 use self::simulation::Simulation;
-
-
-struct WorldUnit {}
-
-pub fn random_color() -> Color {
-    rgb(::rand::random(), ::rand::random(), ::rand::random())
-}
-
-fn toRgba(c : &Color, a: f32) -> [f32; 4] {
-    [c.red(), c.green(), c.blue(), a]
-} 
+use self::car::*;
+use self::car::*;
+use self::color_utils::*;
+use self::ibeo::*;
 
 use piston_window::context::Context;
 use piston_window::G2d;
 use piston::input::{Input, Event};
 use piston::input::Input::*;
-
-fn draw_car(context: Context, graphics: &mut G2d, 
-    center: Point2f64, rot: f64, car_size: Size2f64, color: Color)  {
-        let car_center = center + Vec2f64{x: car_size.height/2.0, y: car_size.width/2.0};
-        let center = context.transform.trans(car_center.x, car_center.y);
-        // let square = rectangle::square(0.0, 0.0, 100.0);
-        rectangle( toRgba(&color, 1.0f32), // red
-                    [-car_size.height/2.0, 
-                    -car_size.width/2.0, 
-                    car_size.height, 
-                    car_size.width],
-                    center.rot_rad(rot),
-                    graphics);
-}
-
-#[derive(Clone, Debug)]
-struct Pose2DF64 {
-    center: Point2f64,
-    yaw: f64
-}
-
-
-#[derive(Clone, Debug)]
-struct Car {
-    id : u64,
-    pose : Pose2DF64,     
-    longitudinal_speed : f32, 
-    yaw_rate: f32,
-    bb_size : Size2f64,
-    color: Color
-}
-
-
-impl Car {
-    fn update(self: &mut Car, dt: f32, change_yawrate : bool) {
-        let rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(self.pose.yaw));
-        let ds  = Vector2{x: self.longitudinal_speed as f64, y: 0.0};
-        let rotated_ds = rot.rotate_vector(ds);
-        self.pose.center += rotated_ds;
-
-        let direction_to_center = Vector2{x:400.0, y:400.0} - self.pose.center.to_vec();
-        let direction_rand = rand::thread_rng().gen_range(0.0, 1e-8)*direction_to_center.magnitude2()as f32;
-        if(change_yawrate) {
-            self.yaw_rate = -direction_to_center.angle(rotated_ds).0.signum() as f32* direction_rand;
-        }
-        self.pose.yaw += (self.yaw_rate * dt) as f64;
-    }
-}
-
-
-struct IbeoPublisher {
-    ibeo_vehicle_pub: Publisher<msg::ibeo_msgs::ObjectListEcu>,
-
-}
-
-impl IbeoPublisher {
-    fn try_new() -> Option<IbeoPublisher> {
-        let ros_not_available_error_msg = "roscore not started or it is not possible to connect to it";
-        let ros_init_result = rosrust::try_init("roadsim2d");
-        if ros_init_result.is_err() {
-            None            
-        } else {
-            let ibeo_vehicle_pub = rosrust::publish("/roadsim2d/vehicle_ibeo").expect(ros_not_available_error_msg);
-            let ibeo_publisher = IbeoPublisher {
-                ibeo_vehicle_pub: ibeo_vehicle_pub
-            };
-            Some(ibeo_publisher)
-        }
-    }
-}
-
-trait VehicleStatesListener { 
-    fn on_vehicle_states<'a>(&'a mut self, vehicles : Box<dyn Iterator<Item = &'a Car> + 'a>);
-}
-
-impl VehicleStatesListener for IbeoPublisher {
-
-    fn on_vehicle_states<'a>(&'a mut self, vehicles : Box<dyn Iterator<Item = &'a Car> + 'a>) {
-        let mut msg = msg::ibeo_msgs::ObjectListEcu::default();
-        msg.header.frame_id = String::from("base_link");
-        for vehicle in vehicles {
-            let mut object_msg = msg::ibeo_msgs::ObjectListEcuObj::default();
-            object_msg.id = 0;
-            object_msg.bounding_box.pose.x = vehicle.pose.center.x;
-            object_msg.bounding_box.pose.y = vehicle.pose.center.y;
-            msg.objects.push(object_msg);
-        }
-        self.ibeo_vehicle_pub.send(msg).unwrap();
-    }
-
-}
 
 struct IdProvider {
     last_id : u64,
@@ -229,6 +134,8 @@ impl Grid {
         //             graphics);
     }
 }
+
+
 
 fn main() {
     let mut window: PistonWindow =
@@ -326,7 +233,7 @@ fn main() {
                 for car in &mut cars {
                     car.update(dt_s, true);
                 }
-                for  listener in &mut vehicle_state_listeners {
+                for listener in &mut vehicle_state_listeners {
                     listener.on_vehicle_states(Box::new(cars.iter()));
                 }
                 if (now-previous_msg_stamp).as_secs() >= 1 {
