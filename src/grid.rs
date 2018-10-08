@@ -35,7 +35,7 @@ impl Grid {
             return;
         }
          let color = [0.2, 0.2, 0.2, 0.8];
-        let grid_size = 16;
+        let grid_size = 32;
         let grid_dist = 100.0;
         let center = context.transform.trans( -grid_size as f64 / 2.0 * grid_dist,
                                               -grid_size as f64 / 2.0 * grid_dist);
