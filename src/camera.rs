@@ -19,6 +19,14 @@ pub struct Camera {
     zoom: f64,
     trans_vel: Vec2f64,
     zoom_vel: f64,
+    camera_mode: CameraMode,
+    target_trasl: Point2f64,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum CameraMode {
+    Free,
+    FollowTarget
 }
 
 impl Camera {
@@ -28,7 +36,13 @@ impl Camera {
             zoom: zoom,
             trans_vel: zero_vec2f64(),
             zoom_vel: 0.0,
+            camera_mode: CameraMode::FollowTarget,
+            target_trasl: Point2f64{x: 0.0, y:0.0}
         }
+    }
+
+    pub fn set_target_trals(&mut self, trasl: Point2f64) {
+        self.target_trasl = trasl;
     }
 
     pub fn apply<T: Transformed>(&self, transform: T) -> T {
@@ -36,10 +50,10 @@ impl Camera {
     }
 }
 
-impl SimulationObject for Camera {
+impl Camera {
     // fn render(&self, _: Context, _: &mut GlGraphics) {}
 
-    fn update(&mut self, ctx: &UpdateContext) {
+    pub fn update_cam(&mut self, ctx: &UpdateContext, window_size: piston_window::Size) {
         macro_rules! if_key {
             ($key:path : $ctx:ident $then:block) => {
                 if $ctx.buttons.contains(&Button::Keyboard($key)) {
@@ -48,18 +62,40 @@ impl SimulationObject for Camera {
             };
         }
 
-        let scroll_speed = 0.7;
-        if_key! [ Key::Up : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed}; }];
-        if_key! [ Key::Down : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed}; }];
-        if_key! [ Key::Left : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed, y: 0.0}; }];
-        if_key! [ Key::Right : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed, y: 0.0}; }];
 
-        let zoom_amount = 0.005;
+        let zoom_amount = 0.001;
         if_key! [ Key::E : ctx { self.zoom_vel += zoom_amount; }];
         if_key! [ Key::Q : ctx { self.zoom_vel -= zoom_amount; }];
 
-        self.trans = self.trans + self.trans_vel;
-        self.trans_vel = self.trans_vel * 0.9;
+        if_key! [ Key::C : ctx { 
+            let new_mode = match(self.camera_mode) {
+                CameraMode::Free => CameraMode::FollowTarget,
+                _ => CameraMode::Free
+            };
+            self.camera_mode = new_mode;
+        }];
+
+        match(self.camera_mode) {
+            CameraMode::FollowTarget => {
+                let screen_factor = window_size.width as f64 / window_size.height as f64 ;
+                let hor_zoom =  self.zoom ;
+                let vert_zoom =  self.zoom / screen_factor;
+                let screen_width = window_size.width as f64 / self.zoom;
+                let screen_height = window_size.height as f64 * vert_zoom;
+                self.trans.x = -self.target_trasl.x+screen_width/2.0;
+                self.trans.y = self.target_trasl.y+screen_height/2.0;
+            }
+            _ => {
+                let scroll_speed = 0.7;
+                if_key! [ Key::Up : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed}; }];
+                if_key! [ Key::Down : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed}; }];
+                if_key! [ Key::Left : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed, y: 0.0}; }];
+                if_key! [ Key::Right : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed, y: 0.0}; }];
+                self.trans = self.trans + self.trans_vel;
+                self.trans_vel = self.trans_vel * 0.9;
+            }
+        }
+
         self.zoom *= 1.0 + self.zoom_vel;
         self.zoom_vel *= 0.9;
     }

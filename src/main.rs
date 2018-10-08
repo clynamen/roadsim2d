@@ -82,7 +82,7 @@ struct Car {
 
 
 impl Car {
-    fn update(self: &mut Car, dt: f32) {
+    fn update(self: &mut Car, dt: f32, change_yawrate : bool) {
         let rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(self.pose.yaw));
         let ds  = Vector2{x: self.longitudinal_speed as f64, y: 0.0};
         let rotated_ds = rot.rotate_vector(ds);
@@ -90,7 +90,9 @@ impl Car {
 
         let direction_to_center = Vector2{x:400.0, y:400.0} - self.pose.center.to_vec();
         let direction_rand = rand::thread_rng().gen_range(0.0, 1e-8)*direction_to_center.magnitude2()as f32;
-        self.yaw_rate = -direction_to_center.angle(rotated_ds).0.signum() as f32* direction_rand;
+        if(change_yawrate) {
+            self.yaw_rate = -direction_to_center.angle(rotated_ds).0.signum() as f32* direction_rand;
+        }
         self.pose.yaw += (self.yaw_rate * dt) as f64;
     }
 }
@@ -240,6 +242,17 @@ fn main() {
     //     random_car(),
     //     random_car(),
     // ];
+    let mut protagonist_car = Car {
+        id: id_provider.next(),
+        pose: Pose2DF64 {center: Point2f64{
+                x: 0.0, 
+                y: 0.0,},
+            yaw: 0.0,}, 
+        longitudinal_speed: 10.0, 
+        yaw_rate: 0.0,
+        bb_size : Size2f64::new(50.0, 100.0),
+        color: rgb(1.0, 0.0, 1.0),
+    };
     let mut cars : Vec<Car> = (0..3).map(|x| random_car( &mut id_provider ) ).collect();
     
     let mut vehicle_state_listeners : Vec<Box<VehicleStatesListener>> = Vec::new();
@@ -272,6 +285,7 @@ fn main() {
 
             if let Some(args) = e.press_args() {
                 simulation.key_press(args);
+
             }
 
             if let Some(args) = e.release_args() {
@@ -280,7 +294,8 @@ fn main() {
 
             if let Some(args) = e.update_args() {
                 grid.update(simulation.get_buttons());
-                simulation.update_camera(&mut camera, args.dt)
+                camera.set_target_trals(protagonist_car.pose.center);
+                simulation.update_camera(&mut camera, args.dt, window.size());
             }
 
             if let Some(args) = e.render_args() {
@@ -293,14 +308,19 @@ fn main() {
                     let new_trans = camera.apply(context.transform);
                     context.transform = new_trans;
                     grid.draw(context, graphics);
+                    draw_car(context, graphics,
+                        protagonist_car.pose.center, protagonist_car.pose.yaw,
+                        protagonist_car.bb_size, protagonist_car.color);
                     for car in &cars {
                         draw_car(context, graphics,
                             car.pose.center, car.pose.yaw, 
                             car.bb_size, car.color);
                     }
                 });
+
+                &mut protagonist_car.update(dt_s, false);
                 for car in &mut cars {
-                    car.update(dt_s);
+                    car.update(dt_s, true);
                 }
                 for  listener in &mut vehicle_state_listeners {
                     listener.on_vehicle_states(Box::new(cars.iter()));

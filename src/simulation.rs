@@ -71,8 +71,7 @@ impl Simulation {
         &self.buttons
     }
 
-
-    pub fn update_camera(&self, camera: &mut Camera, dt: f64) {
+    pub fn update_camera(&self, camera: &mut Camera, dt: f64, window_size: piston_window::Size) {
         let ctx = UpdateContext {
             dt: dt,
             // prev_dt: match self.prev_dt {
@@ -82,7 +81,7 @@ impl Simulation {
             buttons: &self.buttons,
         };
 
-        camera.update(&ctx);
+        camera.update_cam(&ctx, window_size);
     }
 
     // pub fn update(&mut self, args: &input::UpdateArgs) {
