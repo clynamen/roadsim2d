@@ -1,6 +1,5 @@
 use super::car::*;
 
-//rosmsg_include!();
 use super::msg;
 use rosrust::api::raii::Publisher;
 

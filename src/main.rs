@@ -21,6 +21,8 @@ mod simulation;
 mod primitives;
 mod color_utils;
 mod ibeo;
+mod sim_id;
+mod grid;
 
 use std::time;
 use piston_window::*;
@@ -39,101 +41,13 @@ use self::car::*;
 use self::car::*;
 use self::color_utils::*;
 use self::ibeo::*;
+use self::grid::*;
+use self::sim_id::*;
 
 use piston_window::context::Context;
 use piston_window::G2d;
 use piston::input::{Input, Event};
 use piston::input::Input::*;
-
-struct IdProvider {
-    last_id : u64,
-}
-
-impl IdProvider {
-    fn new() -> IdProvider {
-        IdProvider { 
-            last_id: 0u64
-        }
-    }
-    fn next(&mut self) -> u64 {
-        let next_id = self.last_id;
-        self.last_id += 1;
-        next_id
-    }
-
-}
-
-fn random_car(id_provider: &mut IdProvider) -> Car {
-
-    let bb_width = rand::thread_rng().gen_range(100.0, 300.0);
-        
-    return Car{
-        id: id_provider.next(),
-        pose: Pose2DF64 {center: Point2f64{
-        x: rand::thread_rng().gen_range(-400.0, 400.0), 
-        y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
-        yaw: 1.0}, 
-        longitudinal_speed: 10.0, 
-        yaw_rate: 1.0,
-        bb_size : Size2f64::new(bb_width/2.0, bb_width),
-        color: random_color()
-        }
-}
-
-struct Grid {
-    enabled: bool
-}
-
-fn draw_circle<G>(color: [f32; 4], radius: f64, transform: [[f64; 3]; 2], 
-    g: &mut G) where G : piston_window::Graphics{
-
-        Ellipse::new(color).resolution(10)
-            .draw([10.0, 10.0, 10.0, 10.0], &Default::default(), transform, g);
-    // ellipse(color, );
-}
-
-impl Grid {
-    fn update(&mut self, buttons: &HashSet<input::Button>) {
-        macro_rules! if_key {
-            ($key:path : $buttons:ident $then:block) => {
-                if $buttons.contains(&input::Button::Keyboard($key)) {
-                    $then
-                }
-            };
-        }
-        if_key! [ Key::G : buttons { self.enabled = !self.enabled; }];
-    }
-
-    fn draw(&self, context: Context, graphics: &mut G2d) {
-        // let center = context.transform.trans(ix as f64 *100.0, iy as f64 *100.0);
-        // let square = rectangle::square(0.0, 0.0, 100.0);
-        // draw_circle( [0.25, 0.25, 0.25, 0.5], // red
-        if (!self.enabled) {
-            return;
-        }
-         let color = [0.2, 0.2, 0.2, 0.8];
-        let grid_size = 16;
-        let grid_dist = 100.0;
-        let center = context.transform.trans( -grid_size as f64 / 2.0 * grid_dist,
-                                              -grid_size as f64 / 2.0 * grid_dist);
-        for ix in 0..grid_size {
-            for iy in 0..grid_size {
-                let center = context.transform.trans(ix as f64 *100.0, iy as f64 *100.0);
-                draw_circle( color, // red
-                            10.0, 
-                            center,
-                            graphics);
-            }
-        }
-        // rectangle( color, // red
-        //             [-100.0, 
-        //             -100.0, 
-        //             100.0, 
-        //             100.0],
-        //             center,
-        //             graphics);
-    }
-}
 
 
 

@@ -10,9 +10,11 @@ use euclid::*;
 use conrod::color::*;
 use piston_window::*;
 use piston::event_loop::*;
+use std::collections::HashSet;
 
-use super::color_utils::toRgba;
+use super::color_utils::*;
 use super::primitives::*;
+use super::sim_id::*;
 
 
 pub fn draw_car(context: Context, graphics: &mut G2d, 
@@ -54,4 +56,22 @@ impl Car {
         }
         self.pose.yaw += (self.yaw_rate * dt) as f64;
     }
+}
+
+
+pub fn random_car(id_provider: &mut IdProvider) -> Car {
+
+    let bb_width = rand::thread_rng().gen_range(100.0, 300.0);
+        
+    return Car{
+        id: id_provider.next(),
+        pose: Pose2DF64 {center: Point2f64{
+        x: rand::thread_rng().gen_range(-400.0, 400.0), 
+        y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
+        yaw: 1.0}, 
+        longitudinal_speed: 10.0, 
+        yaw_rate: 1.0,
+        bb_size : Size2f64::new(bb_width/2.0, bb_width),
+        color: random_color()
+        }
 }
