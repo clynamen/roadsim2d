@@ -1,14 +1,9 @@
 #![feature(duration_as_u128)]
 extern crate piston_window;
 extern crate piston;
-extern crate cgmath;
 extern crate rand;
 extern crate euclid;
 extern crate conrod;
-use std::collections::HashSet;
-use piston::input;
-
-#[macro_use]
 extern crate rosrust;
 #[macro_use]
 extern crate rosrust_codegen;
@@ -23,32 +18,20 @@ mod color_utils;
 mod ibeo;
 mod sim_id;
 mod grid;
+mod vehicle_manager;
 
 use std::time;
 use piston_window::*;
 use piston::event_loop::*;
-use cgmath::*;
-use rand::distributions::{IndependentSample, Range};
-use rand::Rng;
 //use rosrust::PublisherStream;
-use rosrust::api::raii::Publisher;
-use euclid::*;
 use conrod::color::*;
 use self::camera::*;
 use self::primitives::*;
 use self::simulation::Simulation;
 use self::car::*;
-use self::car::*;
-use self::color_utils::*;
 use self::ibeo::*;
 use self::grid::*;
 use self::sim_id::*;
-
-use piston_window::context::Context;
-use piston_window::G2d;
-use piston::input::{Input, Event};
-use piston::input::Input::*;
-
 
 
 fn main() {
@@ -124,8 +107,6 @@ fn main() {
                 let dt = now-previous_frame_end_timestamp;
                 let dt_s = (dt.as_millis() as f32)/1000.0f32;
 
-                let viewport = args.viewport();
-
                 window.draw_2d(&e, |context, graphics| {
                     clear([1.0; 4], graphics);
                     let mut context = context;
@@ -135,7 +116,7 @@ fn main() {
                     draw_car(context, graphics,
                         protagonist_car.pose.center, protagonist_car.pose.yaw,
                         protagonist_car.bb_size, protagonist_car.color);
-                    println!("Protagonist car pose: {:?}", protagonist_car.pose);
+                    // println!("Protagonist car pose: {:?}", protagonist_car.pose);
                     for car in &cars {
                         draw_car(context, graphics,
                             car.pose.center, car.pose.yaw, 

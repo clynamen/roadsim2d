@@ -68,14 +68,14 @@ impl Camera {
         if_key! [ Key::Q : ctx { self.zoom_vel -= zoom_amount; }];
 
         if_key! [ Key::C : ctx { 
-            let new_mode = match(self.camera_mode) {
+            let new_mode = match self.camera_mode {
                 CameraMode::Free => CameraMode::FollowTarget,
                 _ => CameraMode::Free
             };
             self.camera_mode = new_mode;
         }];
 
-        match(self.camera_mode) {
+        match self.camera_mode {
             CameraMode::FollowTarget => {
                 let screen_factor = window_size.width as f64 / window_size.height as f64 ;
                 let screen_width = window_size.width as f64;

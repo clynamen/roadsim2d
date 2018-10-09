@@ -1,16 +1,10 @@
 use super::primitives::*;
 
 use cgmath::*;
-use rand::distributions::{IndependentSample, Range};
 use rand::Rng;
 use piston::event_loop::*;
-//use rosrust::PublisherStream;
-use rosrust::api::raii::Publisher;
-use euclid::*;
 use conrod::color::*;
 use piston_window::*;
-use piston::event_loop::*;
-use std::collections::HashSet;
 
 use super::color_utils::*;
 use super::primitives::*;
@@ -22,7 +16,7 @@ pub fn draw_car(context: Context, graphics: &mut G2d,
         let car_center = center + Vec2f64{x: car_size.height/2.0, y: car_size.width/2.0};
         let center = context.transform.trans(car_center.x, car_center.y);
         // let square = rectangle::square(0.0, 0.0, 100.0);
-        rectangle( toRgba(&color, 1.0f32), // red
+        rectangle( to_rgba(&color, 1.0f32), // red
                     [-car_size.height/2.0, 
                     -car_size.width/2.0, 
                     car_size.height, 

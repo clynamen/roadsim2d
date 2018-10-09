@@ -3,12 +3,8 @@ extern crate rand;
 extern crate euclid;
 extern crate conrod;
 
-use piston_window::*;
+// use piston_window::*;
 use cgmath::*;
-use rand::distributions::{IndependentSample, Range};
-use rand::Rng;
-//use rosrust::PublisherStream;
-use rosrust::api::raii::Publisher;
 use euclid::*;
 
 pub type Point2f64 = Point2<f64>;

@@ -1,9 +1,16 @@
 use super::car::*;
+use super::primitives::*;
+use super::sim_id::*;
+use conrod::color::*;
+use std::collections::HashSet;
+use piston::input::{Button, Key};
+use std::boxed::Box;
 
 use std::time;
 
 struct VehicleManager {
     // non playable vehicles 
+    id_provider: Box<IdProvider>, 
     non_playable_vehicles: Vec<Car>,
     protagonist_vehicle: Car,
     last_spawn_time : time::Instant,
@@ -12,7 +19,8 @@ struct VehicleManager {
 
 impl VehicleManager {
 
-    pub default() {
+    pub fn default(mut id_provider: Box<IdProvider>) -> VehicleManager {
+
         let mut protagonist_car = Car {
             id: id_provider.next(),
             pose: Pose2DF64 {center: Point2f64{
@@ -25,23 +33,24 @@ impl VehicleManager {
             color: rgb(1.0, 0.0, 1.0),
         };
         VehicleManager {
+            id_provider: id_provider,
             non_playable_vehicles : Vec::new(),
             protagonist_vehicle: protagonist_car,
-            last_spawn_time : time::Instant::now()
+            last_spawn_time : time::Instant::now(),
         }
     }
 
-    pub process_buttons(mut &self, buttons: &HashSet<Button>) {
+    pub fn process_buttons(&mut self, buttons: &HashSet<Button>) {
 
     }
 
-    pub spawn_random_close_to_protagonist() {
+    pub fn spawn_random_close_to_protagonist() {
 
     }
 
-    pub update(mut &self, dt: f32) {
-        &mut protagonist_vehicle.update(dt_s, false);
-        for car in &mut non_playable_vehicles {
+    pub fn update(&mut self, dt_s: f32) {
+        &mut self.protagonist_vehicle.update(dt_s, false);
+        for car in &mut self.non_playable_vehicles {
             car.update(dt_s, true);
         }
     }
@@ -50,7 +59,12 @@ impl VehicleManager {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn it_works() {
+        let mut id_provider = Box::new(IdProvider::new());
+        let vehicle_manager = VehicleManager::default(id_provider);
+        assert_eq!(0, vehicle_manager.non_playable_vehicles.len());
     }
 }

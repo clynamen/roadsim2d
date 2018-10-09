@@ -8,7 +8,7 @@ pub struct Grid {
     pub enabled: bool
 }
 
-pub fn draw_circle<G>(color: [f32; 4], radius: f64, transform: [[f64; 3]; 2], 
+pub fn draw_circle<G>(color: [f32; 4], _radius: f64, transform: [[f64; 3]; 2], 
     g: &mut G) where G : piston_window::Graphics{
 
         Ellipse::new(color).resolution(10)
@@ -35,7 +35,7 @@ impl Grid {
             return;
         }
          let color = [0.2, 0.2, 0.2, 0.8];
-        let grid_size = 32;
+        let grid_size = 3;
         let grid_dist = 100.0;
         let center = context.transform.trans( -grid_size as f64 / 2.0 * grid_dist,
                                               -grid_size as f64 / 2.0 * grid_dist);
