@@ -17,6 +17,18 @@ pub struct Pose2DF64 {
    pub yaw: f64
 }
 
+impl Default for Pose2DF64 {
+
+
+    fn default() -> Self {
+        Pose2DF64 {
+            center : Point2f64{x: 0.0, y: 0.0},
+            yaw: 0.0
+        }
+    }
+
+}
+
 
 pub fn zero_vec2f64() -> Vec2f64 {
     Vec2f64{x: 0.0, y: 0.0}

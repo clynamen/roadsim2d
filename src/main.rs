@@ -32,32 +32,17 @@ use self::car::*;
 use self::ibeo::*;
 use self::grid::*;
 use self::sim_id::*;
+use self::vehicle_manager::*;
 
 
 fn main() {
     let mut window: PistonWindow =
-        WindowSettings::new("Hello Piston!", [640, 480])
+        WindowSettings::new("carsim2D", [640, 480])
         .exit_on_esc(true).build().expect("Unable to create piston application");
 
-    let mut id_provider = IdProvider::new();
+    let mut id_provider = Box::new(IdProvider::new());
 
-    // let mut cars = vec![
-    //     random_car(),
-    //     random_car(),
-    //     random_car(),
-    // ];
-    let mut protagonist_car = Car {
-        id: id_provider.next(),
-        pose: Pose2DF64 {center: Point2f64{
-                x: 0.0, 
-                y: 0.0,},
-            yaw: 0.0,}, 
-        longitudinal_speed: 10.0, 
-        yaw_rate: 0.0,
-        bb_size : Size2f64::new(50.0, 100.0),
-        color: rgb(1.0, 0.0, 1.0),
-    };
-    let mut cars : Vec<Car> = (0..3).map(|x| random_car( &mut id_provider ) ).collect();
+    let mut vehicle_mgr = VehicleManager::new(id_provider);
     
     let mut vehicle_state_listeners : Vec<Box<VehicleStatesListener>> = Vec::new();
 
@@ -79,13 +64,6 @@ fn main() {
     let mut simulation = Simulation::new();
 
     while let Some(e) = window.next() {
-            // piston::event::Event::Input(args) => {
-            //     //game.key_press(button);
-            // }
-
-            // piston::event::Event::Input(args) => {
-            //     //game.key_release(button);
-            // }
 
             if let Some(args) = e.press_args() {
                 simulation.key_press(args);
@@ -98,7 +76,8 @@ fn main() {
 
             if let Some(args) = e.update_args() {
                 grid.update(simulation.get_buttons());
-                camera.set_target_trals(protagonist_car.pose.center);
+                vehicle_mgr.process_buttons(simulation.get_buttons());
+                camera.set_target_trals(vehicle_mgr.get_protagonist_vehicle().pose.center);
                 simulation.update_camera(&mut camera, args.dt, window.draw_size());
             }
 
@@ -106,6 +85,9 @@ fn main() {
                 let now = time::Instant::now();
                 let dt = now-previous_frame_end_timestamp;
                 let dt_s = (dt.as_millis() as f32)/1000.0f32;
+
+                let protagonist_car = vehicle_mgr.get_protagonist_vehicle();
+                let cars = vehicle_mgr.get_non_playable_vehicles();
 
                 window.draw_2d(&e, |context, graphics| {
                     clear([1.0; 4], graphics);
@@ -117,19 +99,21 @@ fn main() {
                         protagonist_car.pose.center, protagonist_car.pose.yaw,
                         protagonist_car.bb_size, protagonist_car.color);
                     // println!("Protagonist car pose: {:?}", protagonist_car.pose);
-                    for car in &cars {
+                    for car in cars.iter() {
                         draw_car(context, graphics,
                             car.pose.center, car.pose.yaw, 
                             car.bb_size, car.color);
                     }
                 });
 
-                &mut protagonist_car.update(dt_s, false);
-                for car in &mut cars {
-                    car.update(dt_s, true);
-                }
+                // &mut protagonist_car.update(dt_s, false);
+                // for car in &mut cars.iter() {
+                //     car.update(dt_s, true);
+                // }
+                vehicle_mgr.update(dt_s);
+
                 for listener in &mut vehicle_state_listeners {
-                    listener.on_vehicle_states(Box::new(cars.iter()));
+                    // listener.on_vehicle_states(Box::new(cars.iter()));
                 }
                 if (now-previous_msg_stamp).as_secs() >= 1 {
                     // let mut msg = msg::ibeo_msgs::ObjectListEcu::default();
