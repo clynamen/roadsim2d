@@ -12,27 +12,32 @@ extern crate rosrust_codegen;
 
 rosmsg_include!();
 
-mod camera;
-mod car;
-mod simulation;
-mod primitives;
-mod color_utils;
-mod ibeo;
-mod sim_id;
-mod grid;
-mod vehicle_manager;
-mod debouncer;
+extern crate roadsim2dlib;
+
+use roadsim2dlib::*;
+
+// mod camera;
+// mod car;
+// mod simulation;
+// mod primitives;
+// mod color_utils;
+// mod ibeo;
+// mod sim_id;
+// mod grid;
+// mod vehicle_manager;
+// mod debouncer;
+// mod roads;
 
 use std::time;
 use piston_window::*;
-use self::camera::*;
-use self::primitives::*;
-use self::simulation::Simulation;
-use self::car::*;
-use self::ibeo::*;
-use self::grid::*;
-use self::sim_id::*;
-use self::vehicle_manager::*;
+// use self::camera::*;
+// use self::primitives::*;
+// use self::simulation::Simulation;
+// use self::car::*;
+// use self::ibeo::*;
+// use self::grid::*;
+// use self::sim_id::*;
+// use self::vehicle_manager::*;
 
 
 fn main() {

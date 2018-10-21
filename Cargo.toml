@@ -19,3 +19,7 @@ floating-duration = "0.1.2"
 
 [build-dependencies]
 rosrust_codegen = "0.6.5"
+
+[lib]
+name = "roadsim2dlib"
+path = "src/lib.rs"
