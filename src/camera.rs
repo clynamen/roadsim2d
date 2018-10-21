@@ -77,7 +77,6 @@ impl Camera {
 
         match self.camera_mode {
             CameraMode::FollowTarget => {
-                let screen_factor = window_size.width as f64 / window_size.height as f64 ;
                 let screen_width = window_size.width as f64;
                 let screen_height = window_size.height as f64;
                 self.trans.x = -self.target_trasl.x*self.zoom +screen_width/2.0;

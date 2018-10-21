@@ -15,6 +15,7 @@ serde = "1.0.25"
 serde_derive = "1.0.25"
 euclid = "*"
 conrod = "*"
+floating-duration = "0.1.2"
 
 [build-dependencies]
 rosrust_codegen = "0.6.5"
