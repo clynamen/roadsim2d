@@ -48,6 +48,7 @@ impl VehicleStatesListener for IbeoPublisher {
     }
 
     fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : Box<dyn Iterator<Item = &'a Car> + 'a>) {
+        println!("vehicle state");
         let mut msg = msg::ibeo_msgs::ObjectListEcu::default();
         msg.header.frame_id = String::from("ibeo");
         msg.header.stamp = rosrust::now();
