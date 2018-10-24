@@ -14,15 +14,15 @@ pub fn draw_circle<G>(color: [f32; 4], _radius: f64, transform: [[f64; 3]; 2],
 }
 
 impl Grid {
-    pub fn update(&mut self, buttons: &HashSet<Button>) {
+    pub fn update(&mut self, buttons: &HashSet<piston_window::Button>) {
         macro_rules! if_key {
             ($key:path : $buttons:ident $then:block) => {
-                if $buttons.contains(&Button::Keyboard($key)) {
+                if $buttons.contains(&piston_window::Button::Keyboard($key)) {
                     $then
                 }
             };
         }
-        if_key! [ Key::G : buttons { self.enabled = !self.enabled; }];
+        if_key! [ piston_window::Key::G : buttons { self.enabled = !self.enabled; }];
     }
 
     pub fn draw(&self, context: Context, graphics: &mut G2d) {
