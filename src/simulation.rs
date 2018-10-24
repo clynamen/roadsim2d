@@ -9,7 +9,7 @@ use super::camera::Camera;
 pub struct UpdateContext<'a> {
     pub dt: f64,
     // pub prev_dt: f64,
-    pub buttons: &'a HashSet<input::Button>,
+    pub buttons: &'a HashSet<piston_window::Button>,
 }
 
 pub trait SimulationObject {
@@ -23,7 +23,7 @@ pub struct Simulation {
     // children: Vec<Box<GameObject>>,
     // prev_dt: Option<f64>,
     // camera: Camera,
-    buttons: HashSet<input::Button>,
+    buttons: HashSet<piston_window::Button>,
 }
 
 impl Simulation {
@@ -44,11 +44,11 @@ impl Simulation {
     //     self.children.push(Box::new(child));
     // }
 
-    pub fn key_press(&mut self, key: input::Button) {
+    pub fn key_press(&mut self, key: piston_window::Button) {
         self.buttons.insert(key);
     }
 
-    pub fn key_release(&mut self, key: input::Button) {
+    pub fn key_release(&mut self, key: piston_window::Button) {
         self.buttons.remove(&key);
     }
 
@@ -66,7 +66,7 @@ impl Simulation {
     //     });
     // }
 
-    pub fn get_buttons(&self) -> &HashSet<input::Button> {
+    pub fn get_buttons(&self) -> &HashSet<piston_window::Button> {
         &self.buttons
     }
 

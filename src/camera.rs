@@ -56,7 +56,7 @@ impl Camera {
     pub fn update_cam(&mut self, ctx: &UpdateContext, window_size: piston_window::Size) {
         macro_rules! if_key {
             ($key:path : $ctx:ident $then:block) => {
-                if $ctx.buttons.contains(&Button::Keyboard($key)) {
+                if $ctx.buttons.contains(&piston_window::Button::Keyboard($key)) {
                     $then
                 }
             };
@@ -64,10 +64,10 @@ impl Camera {
 
 
         let zoom_amount = 0.001;
-        if_key! [ Key::E : ctx { self.zoom_vel += zoom_amount; }];
-        if_key! [ Key::Q : ctx { self.zoom_vel -= zoom_amount; }];
+        if_key! [ piston_window::Key::E : ctx { self.zoom_vel += zoom_amount; }];
+        if_key! [ piston_window::Key::Q : ctx { self.zoom_vel -= zoom_amount; }];
 
-        if_key! [ Key::C : ctx { 
+        if_key! [ piston_window::Key::C : ctx { 
             let new_mode = match self.camera_mode {
                 CameraMode::Free => CameraMode::FollowTarget,
                 _ => CameraMode::Free
@@ -84,10 +84,10 @@ impl Camera {
             }
             _ => {
                 let scroll_speed = 0.7;
-                if_key! [ Key::Up : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed}; }];
-                if_key! [ Key::Down : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed}; }];
-                if_key! [ Key::Left : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed, y: 0.0}; }];
-                if_key! [ Key::Right : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed, y: 0.0}; }];
+                if_key! [ piston_window::Key::Up : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed}; }];
+                if_key! [ piston_window::Key::Down : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed}; }];
+                if_key! [ piston_window::Key::Left : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed, y: 0.0}; }];
+                if_key! [ piston_window::Key::Right : ctx { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed, y: 0.0}; }];
                 self.trans = self.trans + self.trans_vel;
                 self.trans_vel = self.trans_vel * 0.9;
             }

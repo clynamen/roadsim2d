@@ -36,7 +36,7 @@ impl VehicleManagerKeyMapping {
                 mgr.spawn_random_close_to_protagonist();
             });
         let debouncer_box = Box::new(debouncer);
-        key_action_map.insert(Key::K, debouncer_box);
+        key_action_map.insert(piston_window::Key::K, debouncer_box);
 
         VehicleManagerKeyMapping {
             key_action_map: key_action_map
@@ -77,16 +77,20 @@ impl VehicleManager {
     }
 
     pub fn process_buttons(&mut self, vehicle_manager_key_mappings : &mut VehicleManagerKeyMapping, 
-            buttons: &HashSet<Button>) {
+            buttons: &HashSet<piston_window::Button>) {
 
-        if buttons.contains( &Button::Keyboard(Key::K) ) {
-            let action = vehicle_manager_key_mappings.key_action_map.get_mut(&Key::K);
+        if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::K) ) {
+            let action = vehicle_manager_key_mappings.key_action_map.get_mut(&piston_window::Key::K);
             action.unwrap().debounce(self);
         }
 
-        if buttons.contains( &Button::Keyboard(Key::C) ) {
+        if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::C) ) {
             self.non_playable_vehicles.clear();
         }
+    }
+
+    pub fn set_protagonist_speed(speed: f64, yawrate: f64) {
+
     }
 
     pub fn spawn_random_close_to_protagonist(&mut self) {
