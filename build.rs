@@ -7,4 +7,4 @@ extern crate rosrust_codegen;
 // ibeo_msgs/Size2D
 // ibeo_msgs/Vector2D
 
-rosmsg_main!("ibeo_msgs/ObjectListEcu", "tf2_msgs/TFMessage");
+rosmsg_main!("ibeo_msgs/ObjectListEcu", "tf2_msgs/TFMessage", "geometry_msgs/Twist");

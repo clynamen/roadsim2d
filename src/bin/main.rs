@@ -16,29 +16,16 @@ extern crate roadsim2dlib;
 
 use roadsim2dlib::*;
 
-// mod camera;
-// mod car;
-// mod simulation;
-// mod primitives;
-// mod color_utils;
-// mod ibeo;
-// mod sim_id;
-// mod grid;
-// mod vehicle_manager;
-// mod debouncer;
-// mod roads;
-
 use std::time;
-use piston_window::*;
-// use self::camera::*;
-// use self::primitives::*;
-// use self::simulation::Simulation;
-// use self::car::*;
-// use self::ibeo::*;
-// use self::grid::*;
-// use self::sim_id::*;
-// use self::vehicle_manager::*;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
+#[derive(Default)]
+pub struct Twist2D {
+    x: f64,
+    y: f64,
+    z_rot: f64
+}
 
 fn main() {
     let mut window: PistonWindow =
@@ -58,6 +45,14 @@ fn main() {
     } else {
         println!("Could not start ROS publisher");
     }
+
+    let mut target_protagonist_twist = Arc::new(Mutex::new(Twist2D::default()));
+    let mut target_protagonist_twist_clone = target_protagonist_twist.clone();
+    let protagonist_twist_subscriber = rosrust::subscribe("roadsim2d/protagonist_twist", move |v: msg::geometry_msgs::Twist| {
+        let mut target_protagonist_twist_locked = target_protagonist_twist_clone.lock().unwrap();
+        target_protagonist_twist_locked.x = v.linear.x;
+        target_protagonist_twist_locked.z_rot = v.angular.z;
+    }).unwrap();
 
     let mut previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
@@ -83,7 +78,15 @@ fn main() {
             }
 
             if let Some(args) = e.update_args() {
+                rosrust::sleep(rosrust::Duration::from_nanos(1e6 as i64 ));
                 grid.update(simulation.get_buttons());
+
+                let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
+                vehicle_mgr.set_protagonist_speed(
+                    target_protagonist_twist_locked.x, 
+                    target_protagonist_twist_locked.z_rot
+                    );
+
                 vehicle_mgr.process_buttons(&mut vehicle_manager_key_mapping, simulation.get_buttons());
                 camera.set_target_trals(vehicle_mgr.get_protagonist_vehicle().pose.center);
                 simulation.update_camera(&mut camera, args.dt, fps_window.draw_size());

@@ -1,14 +1,6 @@
-// from mythmon/rust-nbodies
-// use graphics::context::Context;
-// use graphics::Transformed;
-// use opengl_graphics::GlGraphics;
 extern crate piston_window;
 extern crate piston;
-use piston::input::{Button, Key};
-// use num::Zero;
 
-// use super::vector::Vec2;
-// use super::game::{GameObject, UpdateContext};
 use piston_window::*;
 use super::simulation::*;
 use super::primitives::*;

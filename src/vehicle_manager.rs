@@ -3,7 +3,7 @@ use super::primitives::*;
 use super::sim_id::*;
 use cgmath::*;
 use conrod::color::*;
-use piston::input::{Button, Key};
+// use piston::input::{Button, Key};
 use rand::*;
 use std::boxed::Box;
 use std::collections::HashSet;
@@ -60,7 +60,7 @@ impl VehicleManager {
                 center: Point2f64 { x: 0.0, y: 0.0 },
                 yaw: 0.0,
             },
-            longitudinal_speed: 10.0,
+            longitudinal_speed: 0.0,
             yaw_rate: 0.0,
             bb_size: Size2f64::new(1.5, 3.0),
             color: rgb(1.0, 0.0, 1.0),
@@ -89,8 +89,9 @@ impl VehicleManager {
         }
     }
 
-    pub fn set_protagonist_speed(speed: f64, yawrate: f64) {
-
+    pub fn set_protagonist_speed(&mut self, speed: f64, yaw_rate: f64) {
+        self.protagonist_vehicle.longitudinal_speed = speed as f32;
+        self.protagonist_vehicle.yaw_rate = yaw_rate as f32;
     }
 
     pub fn spawn_random_close_to_protagonist(&mut self) {

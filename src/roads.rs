@@ -1,7 +1,6 @@
-
 use super::primitives::*;
 use super::sim_id::*;
-use std::vec;
+// use std::vec;
 
 // enum RoadType {
 //     ROAD,

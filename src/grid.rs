@@ -1,5 +1,4 @@
 use piston_window::*;
-use piston::input::{Button, Key};
 use std::collections::HashSet;
 
 pub struct Grid {

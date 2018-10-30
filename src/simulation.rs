@@ -1,9 +1,5 @@
 use std::collections::HashSet;
 
-use piston::input;
-// use opengl_graphics::GlGraphics;
-// use graphics::context::Context;
-
 use super::camera::Camera;
 
 pub struct UpdateContext<'a> {
