@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 piston = "0.37.0"
 piston_window = "0.80.0"
+piston2d-graphics  = "0.26.0"
 cgmath = "*"
 rand = "*"
 rosrust = "0.6.5"

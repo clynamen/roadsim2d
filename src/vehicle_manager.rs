@@ -84,7 +84,7 @@ impl VehicleManager {
             action.unwrap().debounce(self);
         }
 
-        if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::C) ) {
+        if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::X) ) {
             self.non_playable_vehicles.clear();
         }
     }
