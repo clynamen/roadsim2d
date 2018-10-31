@@ -23,6 +23,7 @@ mod grid;
 mod vehicle_manager;
 mod debouncer;
 mod roads;
+mod key_action_mapper;
 
 pub use std::time;
 pub use piston_window::*;
@@ -34,3 +35,4 @@ pub use self::ibeo::*;
 pub use self::grid::*;
 pub use self::sim_id::*;
 pub use self::vehicle_manager::*;
+pub use self::key_action_mapper::*;

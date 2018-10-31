@@ -4,6 +4,7 @@ extern crate piston;
 use piston_window::*;
 use super::simulation::*;
 use super::primitives::*;
+use super::key_action_mapper::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Camera {
@@ -33,6 +34,10 @@ impl Camera {
         }
     }
 
+    pub fn get_zoom_level(&self) -> f64 {
+        self.zoom
+    }
+
     pub fn set_target_trals(&mut self, trasl: Point2f64) {
         self.target_trasl = trasl;
     }
@@ -40,6 +45,18 @@ impl Camera {
     pub fn apply<T: Transformed>(&self, transform: T) -> T {
         transform.trans(self.trans.x, self.trans.y).zoom(self.zoom)
     }
+}
+
+pub fn build_key_mapping_for_camera_manager() -> KeyActionMapper<Camera>  {
+    let mut camera_manager_key_mapping = KeyActionMapper::<Camera>::new();
+    camera_manager_key_mapping.add_action(piston_window::Key::C, 200,  |camera: &mut Camera| {
+                let new_mode = match camera.camera_mode {
+                    CameraMode::Free => CameraMode::FollowTarget,
+                    _ => CameraMode::Free
+                };
+                camera.camera_mode = new_mode;
+            });
+    camera_manager_key_mapping
 }
 
 impl Camera {
@@ -59,13 +76,13 @@ impl Camera {
         if_key! [ piston_window::Key::E : ctx { self.zoom_vel += zoom_amount; }];
         if_key! [ piston_window::Key::Q : ctx { self.zoom_vel -= zoom_amount; }];
 
-        if_key! [ piston_window::Key::C : ctx { 
-            let new_mode = match self.camera_mode {
-                CameraMode::Free => CameraMode::FollowTarget,
-                _ => CameraMode::Free
-            };
-            self.camera_mode = new_mode;
-        }];
+        // if_key! [ piston_window::Key::C : ctx { 
+        //     let new_mode = match self.camera_mode {
+        //         CameraMode::Free => CameraMode::FollowTarget,
+        //         _ => CameraMode::Free
+        //     };
+        //     self.camera_mode = new_mode;
+        // }];
 
         match self.camera_mode {
             CameraMode::FollowTarget => {

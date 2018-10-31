@@ -12,6 +12,7 @@ use std::time;
 
 use super::debouncer::*;
 use std::collections::HashMap;
+use super::key_action_mapper::*;
 
 pub struct VehicleManagerKeyMapping {
     key_action_map: HashMap<piston_window::Key, Box<Debouncer<VehicleManager>>>
@@ -23,6 +24,18 @@ pub struct VehicleManager {
     non_playable_vehicles: Vec<Car>,
     protagonist_vehicle: Car,
     last_spawn_time: time::Instant,
+}
+
+
+pub fn build_key_mapping_for_vehicle_manager() -> KeyActionMapper<VehicleManager>  {
+    let mut vehicle_manager_key_mapping = KeyActionMapper::<VehicleManager>::new();
+    vehicle_manager_key_mapping.add_action(piston_window::Key::K, 200,  |mgr: &mut VehicleManager| {
+                mgr.spawn_random_close_to_protagonist();
+            });
+    vehicle_manager_key_mapping.add_action(piston_window::Key::X, 200,  |mgr: &mut VehicleManager| {
+                mgr.non_playable_vehicles.clear();
+            });
+    vehicle_manager_key_mapping
 }
 
 impl VehicleManagerKeyMapping {

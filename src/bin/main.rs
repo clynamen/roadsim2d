@@ -57,13 +57,15 @@ fn main() {
     let mut previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
 
-    let mut grid = Grid{ enabled: true};
+    let mut grid = Grid::new();
     let mut camera = Camera::new( Vec2f64{x: 0.0, y: 0.0}, 40.0);
 
     // for e in window.events().ups(60).max_fps(60) {
     let mut simulation = Simulation::new();
 
-    let mut vehicle_manager_key_mapping = VehicleManagerKeyMapping::new();
+    //let mut vehicle_manager_key_mapping = VehicleManagerKeyMapping::new();
+    let mut vehicle_manager_key_mapping = build_key_mapping_for_vehicle_manager();
+    let mut camera_key_mapping = build_key_mapping_for_camera_manager();
 
     let mut fps_window = window.max_fps(30);
     while let Some(e) = fps_window.next() {
@@ -87,7 +89,12 @@ fn main() {
                     target_protagonist_twist_locked.z_rot
                     );
 
-                vehicle_mgr.process_buttons(&mut vehicle_manager_key_mapping, simulation.get_buttons());
+
+                //vehicle_mgr.process_buttons(&mut vehicle_manager_key_mapping, simulation.get_buttons());
+                vehicle_manager_key_mapping.process_buttons(simulation.get_buttons(), &mut vehicle_mgr);
+                camera_key_mapping.process_buttons(simulation.get_buttons(), &mut camera);
+
+                grid.set_reference_zoom_level(camera.get_zoom_level());
                 camera.set_target_trals(vehicle_mgr.get_protagonist_vehicle().pose.center);
                 simulation.update_camera(&mut camera, args.dt, fps_window.draw_size());
             }

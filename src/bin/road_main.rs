@@ -41,7 +41,7 @@ fn main() {
     let mut previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
 
-    let mut grid = Grid{ enabled: false};
+    let mut grid = Grid::new();
     let mut camera = Camera::new( Vec2f64{x: 0.0, y: 0.0}, 40.0);
 
     // for e in window.events().ups(60).max_fps(60) {
