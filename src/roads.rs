@@ -1,5 +1,6 @@
 use super::primitives::*;
 use super::sim_id::*;
+use piston_window::*;
 // use std::vec;
 
 // enum RoadType {
@@ -54,11 +55,57 @@ impl LaneSection {
     }
 }
 
-struct Road {
+pub struct Road {
     id: u64,
     junction: i64,
     geometries: Vec<RoadGeometry>,
     lane_sections: Vec<LaneSection>,
+}
+
+
+pub fn draw_road(context: Context, graphics: &mut G2d, 
+                    road: &Road)  {
+        // note: some vector must be reversed due to the fact that piston_2d Y points toward bottom of screen
+        //let reverse_y_center = Point2f64{x: center.x, y: -center.y};
+        //let reverse_y_rot = -rot;
+        //let car_center = reverse_y_center + Vec2f64{x: car_size.height/2.0, y: car_size.width/2.0};
+        //let center = context.transform.trans(car_center.x, car_center.y);
+        // let square = rectangle::square(0.0, 0.0, 100.0);
+
+        for geometry in &road.geometries {
+            match geometry.sub {
+                RoadGeometrySub::Line{} => {
+                    let start = context.transform.trans(geometry.base.origin.x,
+                        geometry.base.origin.y);
+                    for lane_section in &road.lane_sections {
+                        let lane_y_start : f32 = lane_section.lanes.iter()
+                            .filter(|x| x.id < 0)
+                            .map(|x| x.width_params.a).sum();
+                        let mut lane_y_sum = -lane_y_start;
+                        let mut lane_index = 0;
+                        for lane in &lane_section.lanes {
+                            let color = [0.2 * (lane_index as f32), 0.2f32, 0.2f32, 1.0f32];
+                            rectangle( color, 
+                                        [0.0, 
+                                        lane_y_sum as f64, 
+                                        geometry.base.length as f64,
+                                        lane.width_params.a as f64],
+                                        start.rot_rad(geometry.base.yaw),
+                                        graphics);
+                            lane_y_sum += lane.width_params.a;
+                            lane_index += 1;
+                        }
+                    }
+                    
+                }
+                _ => {
+
+                }
+            }
+        };
+
+        // rectangle( [0.0, 1.0, 0.0, 1.0],
+        //             [-1.0, -1.0, 2.0, 2.0], center, graphics);
 }
 
 impl Road {
@@ -73,13 +120,29 @@ impl Road {
     }
 }
 
-fn generate_random_road(id_provider: &mut IdProvider) -> Road {
+pub fn generate_random_road(id_provider: &mut IdProvider) -> Road {
     let mut road = Road::new(id_provider);
     let mut lane_section = LaneSection::new();
 
-    let lane = Lane{id: 0, s: 0.0, width_params: QuadrinomialParams::zero_order(2.0)};
-    lane_section.lanes.push(lane);
+    let geometry = RoadGeometry {
+        base: RoadGeometryBase {
+            s: 0.0,
+            origin: Vec2f64{x: 0.0, y: 0.0},
+            yaw: 1.0,
+            length: 5.0
+        },
+        sub: RoadGeometrySub::Line {
+
+        } 
+    };
+
+    road.geometries.push(geometry);
+
+    lane_section.lanes.push(Lane{id: -1, s: 0.0, width_params: QuadrinomialParams::zero_order(0.5)});
+    lane_section.lanes.push(Lane{id: 0, s: 0.0, width_params: QuadrinomialParams::zero_order(0.0)});
+    lane_section.lanes.push(Lane{id: 1, s: 0.0, width_params: QuadrinomialParams::zero_order(2.0)});
 
     road.lane_sections.push(lane_section);
+
     road
 }

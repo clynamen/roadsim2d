@@ -36,3 +36,4 @@ pub use self::grid::*;
 pub use self::sim_id::*;
 pub use self::vehicle_manager::*;
 pub use self::key_action_mapper::*;
+pub use self::roads::*;

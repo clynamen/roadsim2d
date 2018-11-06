@@ -36,7 +36,7 @@ fn main() {
         WindowSettings::new("carsim2D - ROAD", [640, 480])
         .exit_on_esc(true).build().expect("Unable to create piston application");
 
-    let id_provider = Box::new(IdProvider::new());
+    let mut id_provider = Box::new(IdProvider::new());
 
     let mut previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
@@ -49,6 +49,7 @@ fn main() {
 
     let mut fps_window = window.max_fps(30);
 
+    let road = generate_random_road(&mut id_provider);
 
     while let Some(e) = fps_window.next() {
 
@@ -64,6 +65,7 @@ fn main() {
             if let Some(args) = e.update_args() {
                 grid.update(simulation.get_buttons());
                 simulation.update_camera(&mut camera, args.dt, fps_window.draw_size());
+                grid.set_reference_zoom_level(camera.get_zoom_level());
             }
 
             if let Some(_args) = e.render_args() {
@@ -78,6 +80,7 @@ fn main() {
                     let new_trans = camera.apply(context.transform);
                     context.transform = new_trans;
                     grid.draw(context, graphics);
+                    draw_road(context, graphics, &road);
                 });
 
                 if (now-previous_msg_stamp).as_secs() >= 1 {
