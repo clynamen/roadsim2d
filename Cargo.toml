@@ -5,21 +5,21 @@ authors = ["clynamen <clynamen@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-piston = "0.37.0"
-piston_window = "0.80.0"
-piston2d-graphics  = "0.26.0"
+piston = "*"
+piston_window = "*"
+piston2d-graphics  = "*"
 cgmath = "*"
 rand = "*"
 rosrust = "0.7"
 rosrust_codegen = "0.7"
-serde = "1.0.25"
-serde_derive = "1.0.25"
+serde = "*"
+serde_derive = "*"
 euclid = "*"
 conrod = "*"
 floating-duration = "0.1.2"
 
 [build-dependencies]
-rosrust_codegen = "0.6.5"
+rosrust_codegen = "*"
 
 [lib]
 name = "roadsim2dlib"
