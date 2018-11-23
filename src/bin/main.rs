@@ -1,16 +1,16 @@
 #![feature(duration_as_u128)]
 #![feature(fn_traits)]
 #![feature(unboxed_closures)] 
+
+// #[macro_use]
+// extern crate rosrust;
+
 extern crate piston_window;
 extern crate piston;
 extern crate rand;
 extern crate euclid;
 extern crate conrod;
-extern crate rosrust;
-#[macro_use]
-extern crate rosrust_codegen;
 
-rosmsg_include!();
 
 extern crate roadsim2dlib;
 
@@ -48,11 +48,17 @@ fn main() {
 
     let mut target_protagonist_twist = Arc::new(Mutex::new(Twist2D::default()));
     let mut target_protagonist_twist_clone = target_protagonist_twist.clone();
-    let protagonist_twist_subscriber = rosrust::subscribe("roadsim2d/protagonist_twist", move |v: msg::geometry_msgs::Twist| {
+
+    let twist_subscriber = TwistSubscriber::new( move |x, z_rot| {
         let mut target_protagonist_twist_locked = target_protagonist_twist_clone.lock().unwrap();
-        target_protagonist_twist_locked.x = v.linear.x;
-        target_protagonist_twist_locked.z_rot = v.angular.z;
-    }).unwrap();
+        target_protagonist_twist_locked.x = x;
+        target_protagonist_twist_locked.z_rot = z_rot;
+    });
+
+    // let protagonist_twist_subscriber = rosrust::subscribe("roadsim2d/protagonist_twist", move |v: msg::geometry_msgs::Twist| {
+    //     target_protagonist_twist_locked.x = v.linear.x;
+    //     target_protagonist_twist_locked.z_rot = v.angular.z;
+    // }).unwrap();
 
     let mut previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
