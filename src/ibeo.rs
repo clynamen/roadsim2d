@@ -4,14 +4,24 @@ use super::msg;
 use rosrust::api::raii::Publisher;
 use cgmath::*;
 
+enum IbeoClassification {
+    UNCLASSIFIED,
+    UNKNOWN_SMALL,
+    UNKNOWN_BIG,
+    PEDESTRIAN,
+    BIKE,
+    CAR,
+    TRUCK,
+    UNDERIVABLE,
+}
+
 fn publish_tf_trasl_euler(tf_pub: &mut Publisher<msg::tf2_msgs::TFMessage>, frame: &str, child_frame: &str, 
-    x: f64, y: f64, z: f64, 
-    roll: f64, pitch: f64, yaw: f64) {
+    x: f64, y: f64, z: f64, roll: f64, pitch: f64, yaw: f64, time: &rosrust::Time) {
 
     let mut msg = msg::tf2_msgs::TFMessage::default();
     let mut transform = msg::geometry_msgs::TransformStamped::default();
 
-    transform.header.stamp = rosrust::now();
+    transform.header.stamp = time.clone();
     transform.header.frame_id = String::from(frame);
     transform.child_frame_id = String::from(child_frame);
 
@@ -82,14 +92,16 @@ impl VehicleStatesListener for IbeoPublisher {
         // msg.transforms.push(transform);
         // self.tf_pub.send(msg).unwrap();
 
-        publish_tf_trasl_euler(&mut self.tf_pub, "map", "odom", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        publish_tf_trasl_euler(&mut self.tf_pub, "odom", "base_link", car_center.x, car_center.y, 0.0, 0.0, 0.0, protagonist.pose.yaw);
-        publish_tf_trasl_euler(&mut self.tf_pub, "base_link", "ibeo", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        let publish_time = rosrust::now();
+
+        publish_tf_trasl_euler(&mut self.tf_pub, "map", "odom", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &publish_time);
+        publish_tf_trasl_euler(&mut self.tf_pub, "odom", "base_link", car_center.x, car_center.y, 0.0, 0.0, 0.0, protagonist.pose.yaw, &publish_time);
+        publish_tf_trasl_euler(&mut self.tf_pub, "base_link", "ibeo", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &publish_time);
 
         {
             let mut msg = msg::nav_msgs::Odometry {
                 header: msg::std_msgs::Header {
-                    stamp: rosrust::now(),
+                    stamp: publish_time,
                     frame_id: String::from("map"),
                     seq: 0,
                 },
@@ -116,8 +128,6 @@ impl VehicleStatesListener for IbeoPublisher {
 
        {
             let mut msg = msg::geometry_msgs::Pose::default();
-            // msg.header.stamp = rosrust::now();
-            // msg.header.frame_id = "map";
             msg.position.x = car_center.x;
             msg.position.y = car_center.y;
 
@@ -142,6 +152,7 @@ impl VehicleStatesListener for IbeoPublisher {
             let rel_center = vehicle.pose.center - protagonist_pose.center;
             let rotated_rel_center = protagonist_rot.rotate_vector(rel_center);
 
+            object_msg.classification = IbeoClassification::CAR as i32;
             object_msg.bounding_box.pose.x = rotated_rel_center.x;
             object_msg.bounding_box.pose.y = rotated_rel_center.y;
             object_msg.bounding_box.pose.theta = vehicle.pose.yaw - std::f64::consts::PI / 2.0 -protagonist_pose.yaw;
