@@ -68,8 +68,6 @@ pub trait VehicleStatesListener {
 impl VehicleStatesListener for IbeoPublisher {
 
     fn on_protagonist_state<'a>(&'a mut self, protagonist: &'a Car) {
-
-        println!("on protagonist state");
         // transform.header.stamp = rosrust::now();
         // transform.header.frame_id = String::from("odom");
         // transform.child_frame_id = String::from("base_link");
@@ -84,9 +82,9 @@ impl VehicleStatesListener for IbeoPublisher {
         // msg.transforms.push(transform);
         // self.tf_pub.send(msg).unwrap();
 
-        // publish_tf_trasl_euler(&mut self.tf_pub, "map", "odom", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        // publish_tf_trasl_euler(&mut self.tf_pub, "odom", "base_link", car_center.x, car_center.y, 0.0, 0.0, 0.0, protagonist.pose.yaw);
-        // publish_tf_trasl_euler(&mut self.tf_pub, "base_link", "ibeo", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        publish_tf_trasl_euler(&mut self.tf_pub, "map", "odom", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        publish_tf_trasl_euler(&mut self.tf_pub, "odom", "base_link", car_center.x, car_center.y, 0.0, 0.0, 0.0, protagonist.pose.yaw);
+        publish_tf_trasl_euler(&mut self.tf_pub, "base_link", "ibeo", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
         {
             let mut msg = msg::nav_msgs::Odometry {
