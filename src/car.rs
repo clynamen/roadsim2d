@@ -62,7 +62,7 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
         x: rand::thread_rng().gen_range(-400.0, 400.0), 
         y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
         yaw: 1.0}, 
-        longitudinal_speed: 10.0, 
+        longitudinal_speed: rand::thread_rng().gen_range(0.1, 2.0), 
         yaw_rate: 0.01,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()

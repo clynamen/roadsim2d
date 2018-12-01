@@ -17,6 +17,7 @@ serde_derive = "*"
 euclid = "*"
 conrod = "*"
 floating-duration = "0.1.2"
+nalgebra = "0.16.11"
 
 [build-dependencies]
 rosrust_codegen = "*"

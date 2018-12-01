@@ -13,8 +13,10 @@ extern crate rosrust_codegen;
 rosmsg_include!();
 
 extern crate roadsim2dlib;
+extern crate nalgebra;
 
 use roadsim2dlib::*;
+use nalgebra as nb;
 
 // mod camera;
 // mod car;
@@ -31,8 +33,31 @@ use roadsim2dlib::*;
 use std::time;
 use piston_window::*;
 
+fn vecmath2x3_to_nalgebera2x3(in_mat : &graphics::math::Matrix2d) -> nb::Matrix2x3<f64> {
+    let out_map = nb::Matrix2x3::new(
+        in_mat[0][0], in_mat[0][1], in_mat[0][2],
+        in_mat[1][0], in_mat[1][1], in_mat[1][2], 
+    );
+    out_map
+}
+
+fn nalgebera_to_column_slice<T> (in_mat : &nb::Matrix<f64, nb::U2, nb::Dynamic, T>) ->  Vec<[f32; 2]>
+    where T: nalgebra::storage::Storage<f64, nalgebra::U2, nalgebra::Dynamic>
+{
+    let mut array  = vec![ [0.0f32, 0.0f32]; in_mat.ncols()];
+    for column_i in 0..in_mat.ncols() {
+        array[column_i][0] = in_mat.column(column_i)[0] as f32;
+        array[column_i][1] = in_mat.column(column_i)[1] as f32;
+    }
+    // let out_map = nb::Matrix2x3::new(
+    //     in_mat[0][0], in_mat[0][1], in_mat[0][2],
+    //     in_mat[1][0], in_mat[1][1], in_mat[1][2], 
+    // );
+    array
+}
+
 fn main() {
-    let mut window: PistonWindow =
+    let window: PistonWindow =
         WindowSettings::new("carsim2D - ROAD", [640, 480])
         .exit_on_esc(true).build().expect("Unable to create piston application");
 
@@ -79,8 +104,28 @@ fn main() {
                     let mut context = context;
                     let new_trans = camera.apply(context.transform);
                     context.transform = new_trans;
+
+
+                    println!("transform {:?}", context.transform);
+                    let tmat = vecmath2x3_to_nalgebera2x3(&context.transform);
+                    println!("n transform  {} ", tmat);
+
+                    let vertices_mat = nb::DMatrix::<f64>::from_row_slice(3, 6, &[
+                        0.0, 2.0, 0.0, 4.0, 5.0, 4.0,
+                        0.0, 0.0, 2.0, 4.0, 4.0, 5.0,
+                        1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+                    ]);
+
+                    let transformed_mat = tmat * &vertices_mat;
+                    println!("from {} to {}", vertices_mat, transformed_mat);
+                    
                     grid.draw(context, graphics);
                     draw_road(context, graphics, &road);
+                    graphics.tri_list(&context.draw_state, &[0.5f32, 0.5f32, 0.5f32, 0.5f32], |f|  {
+                        let points = nalgebera_to_column_slice(&transformed_mat);
+                        println!("points {:?}", points);
+                        f(&points[..]);
+                    });
                 });
 
                 if (now-previous_msg_stamp).as_secs() >= 1 {
