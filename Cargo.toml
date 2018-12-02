@@ -17,6 +17,7 @@ conrod = "0.61.1"
 floating-duration = "0.1.2"
 nalgebra = "0.16.11"
 specs = "0.14.0"
+specs-derive = "0.3.0"
 
 [build-dependencies]
 rosrust_codegen = "0.7.0"

@@ -1,6 +1,8 @@
 #![feature(duration_as_u128)]
 #![feature(fn_traits)]
 #![feature(unboxed_closures)] 
+#[macro_use]
+extern crate specs_derive;
 
 // #[macro_use]
 // extern crate rosrust;
@@ -23,7 +25,7 @@ use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
- Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join};
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 
 
 #[derive(Default)]
@@ -300,6 +302,28 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
     }
 }
 
+pub struct ControlProtagonistSys<'a> {
+   target_protagonist_twist: &'a Twist2D
+}
+
+impl <'a, 'b> System<'a> for ControlProtagonistSys<'b> {
+    type SystemData = (
+        WriteStorage<'a, Car>,
+        ReadStorage<'a, ProtagonistTag>,
+    );
+
+    fn run(&mut self, (mut cars, protagonists): Self::SystemData) {
+        for (car, _protagonist) in (&mut cars, &protagonists).join() {
+            car.longitudinal_speed = self.target_protagonist_twist.x as f32;
+            car.yaw_rate = self.target_protagonist_twist.z_rot as f32;
+        }
+    }
+}
+
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
+pub struct ProtagonistTag;
+
 
 fn main() {
     let mut window: PistonWindow =
@@ -354,6 +378,7 @@ fn main() {
     world.register::<Car>();
     world.register::<Camera>();
     world.register::<Grid>();
+    world.register::<ProtagonistTag>();
     // world.register::<Position>();
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
@@ -362,7 +387,7 @@ fn main() {
 
     let protagonist_car = vehicle_mgr.make_protagonist_car();
 
-    world.create_entity().with(protagonist_car).build();
+    world.create_entity().with(protagonist_car).with(ProtagonistTag{}).build();
     world.add_resource(camera);
 
 
@@ -400,10 +425,11 @@ fn main() {
             UpdateGridSys{}.run_now(&mut world.res);
 
             SpawnNewCarSys{vehicle_mgr: &mut vehicle_mgr}.run_now(&mut world.res);
+            let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
+            ControlProtagonistSys{target_protagonist_twist: &target_protagonist_twist_locked}.run_now(&mut world.res);
             UpdateCarsSys.run_now(&mut world.res);
 
             // rosrust::sleep(rosrust::Duration::from_nanos(1e6 as i64 ));
-            // grid.update(simulation.get_buttons());
 
             // let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
             // vehicle_mgr.set_protagonist_speed(
@@ -428,9 +454,6 @@ fn main() {
             RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             world.maintain();
-            // let protagonist_car = vehicle_mgr.get_protagonist_vehicle();
-
-            // vehicle_mgr.update(dt_s);
 
             // for listener in &mut vehicle_state_listeners {
             //     let cars = vehicle_mgr.get_non_playable_vehicles();
