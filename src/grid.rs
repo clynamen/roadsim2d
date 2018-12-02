@@ -1,6 +1,9 @@
 use piston_window::*;
 use std::collections::HashSet;
-use specs::{Component, VecStorage};
+use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
+
+use super::camera::Camera;
 
 pub struct Grid {
     pub enabled: bool,
@@ -67,5 +70,24 @@ impl Grid {
         graphics::grid::Grid {cols: 200u32, rows: 200u32, units: grid_unit}.draw(&grid_line, 
             &context.draw_state, center, graphics);
 
+    }
+}
+
+pub struct RenderGridSys<'a> {
+    pub fps_window: &'a mut PistonWindow,
+    pub render_event: &'a Event,
+    pub render_args:  RenderArgs, 
+}
+
+impl<'a, 'b> System<'a> for RenderGridSys<'b> {
+    type SystemData = (ReadExpect<'a, Grid>, ReadExpect<'a, Camera>);
+
+    fn run(&mut self, (grid, camera): Self::SystemData) {
+        self.fps_window.draw_2d(self.render_event, |context, graphics| {
+            let mut context = context;
+            let new_trans = camera.apply(context.transform);
+            context.transform = new_trans;
+            grid.draw(context, graphics);
+        });
     }
 }

@@ -6,7 +6,10 @@ use piston_window::*;
 use super::color_utils::*;
 use super::primitives::*;
 use super::sim_id::*;
-use specs::{Component, VecStorage};
+use super::global_resources::*;
+use super::camera::Camera;
+use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 
 
 pub fn draw_car(context: Context, graphics: &mut G2d, 
@@ -72,4 +75,60 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()
         }
+}
+
+pub struct RenderCarSys<'a> {
+    pub fps_window: &'a mut PistonWindow,
+    pub render_event: &'a Event,
+    pub render_args:  RenderArgs, 
+}
+
+
+impl<'a, 'b> System<'a> for RenderCarSys<'b> {
+    type SystemData = (ReadStorage<'a, Car>, ReadExpect<'a, Camera>);
+
+    fn run(&mut self, (car, camera): Self::SystemData) {
+        use specs::Join;
+
+        self.fps_window.draw_2d(self.render_event, |context, graphics| {
+            let mut context = context;
+            let new_trans = camera.apply(context.transform);
+            context.transform = new_trans;
+
+            // grid.draw(context, graphics);
+            // draw_car(context, graphics,
+            //     protagonist_car.pose.center, protagonist_car.pose.yaw,
+            //     protagonist_car.bb_size, protagonist_car.color);
+
+            // let cars = vehicle_mgr.get_non_playable_vehicles();
+            for car in car.join() {
+                draw_car(context, graphics,
+                    car.pose.center, car.pose.yaw, 
+                    car.bb_size, car.color);
+            }
+
+            // rectangle( [0.5f32, 0.0f32, 1.0f32, 0.5f32], 
+            //             [-1.0, 
+            //             -1.0, 
+            //             200.0, 
+            //             200.0],
+            //             context.transform,
+            //             graphics);
+
+        });
+
+    }
+}
+
+pub struct UpdateCarsSys;
+
+impl<'a> System<'a> for UpdateCarsSys {
+    type SystemData = (ReadExpect<'a, UpdateDeltaTime>, WriteStorage<'a, Car>);
+
+    fn run(&mut self, (update_delta_time, mut cars): Self::SystemData) {
+        for car in (&mut cars).join() {
+            car.update(update_delta_time.dt);
+        }
+    }
+
 }

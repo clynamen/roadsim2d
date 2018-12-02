@@ -27,9 +27,12 @@ mod roads;
 mod key_action_mapper;
 mod msg;
 mod twist_subscriber;
+mod global_resources;
+mod input;
 
 pub use std::time;
 pub use piston_window::*;
+pub use self::input::*;
 pub use self::camera::*;
 pub use self::primitives::*;
 pub use self::simulation::Simulation;
@@ -42,3 +45,4 @@ pub use self::key_action_mapper::*;
 pub use self::roads::*;
 pub use self::msg::*;
 pub use self::twist_subscriber::*;
+pub use self::global_resources::*;
