@@ -1,3 +1,4 @@
+#![feature(custom_attribute)]
 #![feature(duration_as_u128)]
 #![feature(fn_traits)]
 #![feature(unboxed_closures)] 
@@ -10,6 +11,8 @@ extern crate rosrust;
 extern crate specs;
 #[macro_use]
 extern crate rosrust_codegen;
+#[macro_use]
+extern crate specs_derive;
 
 rosmsg_include!();
 
@@ -29,6 +32,7 @@ mod msg;
 mod twist_subscriber;
 mod global_resources;
 mod input;
+mod protagonist;
 
 pub use std::time;
 pub use piston_window::*;
@@ -46,3 +50,4 @@ pub use self::roads::*;
 pub use self::msg::*;
 pub use self::twist_subscriber::*;
 pub use self::global_resources::*;
+pub use self::protagonist::*;

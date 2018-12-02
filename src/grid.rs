@@ -1,4 +1,7 @@
 use piston_window::*;
+use super::global_resources::*;
+use super::global_resources::*;
+use super::input::*;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
@@ -91,3 +94,21 @@ impl<'a, 'b> System<'a> for RenderGridSys<'b> {
         });
     }
 }
+
+pub struct UpdateGridSys;
+
+
+impl<'a> System<'a> for UpdateGridSys   {
+    type SystemData = (
+        ReadExpect<'a, UpdateDeltaTime>, 
+        ReadExpect<'a, Camera>,
+        ReadExpect<'a, InputState>,
+        WriteExpect<'a, Grid>,
+    );
+
+    fn run(&mut self, (update_delta_time, camera, input_state, mut grid): Self::SystemData) {
+        grid.update(&input_state.buttons_held);
+        grid.set_reference_zoom_level(camera.get_zoom_level());
+    }
+}
+

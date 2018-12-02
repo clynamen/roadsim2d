@@ -4,9 +4,14 @@ extern crate piston;
 use piston_window::*;
 use super::simulation::*;
 use super::primitives::*;
+use super::protagonist::*;
 use super::key_action_mapper::*;
+use super::input::*;
+use super::car::*;
+use super::global_resources::*;
 use std::collections::HashSet;
-use specs::{Component, VecStorage};
+use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Camera {
@@ -113,4 +118,32 @@ impl Camera {
         self.zoom *= 1.0 + self.zoom_vel;
         self.zoom_vel *= 0.9;
     }
+}
+
+
+pub struct UpdateCameraSys<'a> {
+    pub window_size: piston_window::Size,
+    pub camera_key_mapping: &'a mut KeyActionMapper<Camera>
+} 
+
+impl <'a, 'b> System<'a> for UpdateCameraSys<'b> {
+    type SystemData = (
+        WriteExpect<'a, InputState>,
+        ReadExpect<'a, UpdateDeltaTime>, 
+        WriteExpect<'a, Camera>,
+        ReadStorage<'a, Car>, 
+        ReadStorage<'a, ProtagonistTag>, 
+    );
+
+
+    fn run(&mut self, (mut input_state, update_delta_time, mut camera, cars, protagonists): Self::SystemData) {
+        camera.update_cam(update_delta_time.dt, &input_state.buttons_held, self.window_size);
+        self.camera_key_mapping.process_buttons(&input_state.buttons_held, &mut camera);
+
+        for (car, protagonist) in (&cars, &protagonists).join() {
+            camera.set_target_trals(car.pose.center);
+        }
+
+    }
+
 }

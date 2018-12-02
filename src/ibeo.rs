@@ -1,8 +1,11 @@
 use super::car::*;
+use super::protagonist::*;
 
 use super::msg;
 use rosrust::api::raii::Publisher;
 use cgmath::*;
+use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 
 enum IbeoClassification {
     UNCLASSIFIED,
@@ -165,3 +168,32 @@ impl VehicleStatesListener for IbeoPublisher {
     }
 
 }
+
+
+pub struct IbeoSensorSys<'a> {
+    pub vehicle_state_listeners : &'a mut Vec<Box<VehicleStatesListener>>
+}
+
+impl <'a, 'b> System<'a> for IbeoSensorSys<'b> {
+    type SystemData = (
+        ReadStorage<'a, Car>,
+        ReadStorage<'a, ProtagonistTag>,
+    );
+
+    fn run(&mut self, (mut cars, protagonists): Self::SystemData) {
+        let mut other_cars = Vec::<&Car>::new(); 
+        for (car, ()) in (&cars, !&protagonists).join() {
+            other_cars.push(car);
+        }
+
+        for (car, _protagonist) in (&cars, &protagonists).join() {
+            let protagonist_car = car;
+            for listener in &mut (self.vehicle_state_listeners).iter_mut() {
+                listener.on_vehicle_states(protagonist_car, &other_cars);
+                listener.on_protagonist_state(protagonist_car);
+            }
+        }
+
+    }
+}
+

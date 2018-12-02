@@ -6,7 +6,10 @@ use conrod::color::*;
 // use piston::input::{Button, Key};
 use rand::*;
 use std::boxed::Box;
+use super::input::*;
 use std::collections::HashSet;
+use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 
 use std::time;
 
@@ -174,4 +177,31 @@ mod tests {
         assert_eq!(1, vehicle_manager.non_playable_vehicles.len());
     }
 
+}
+
+
+
+
+pub struct SpawnNewCarSys<'a> {
+    pub vehicle_mgr: &'a mut VehicleManager
+}
+
+
+impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
+    type SystemData = (
+        Entities<'a>,
+        WriteExpect<'a, InputState>,
+        Read<'a, LazyUpdate>
+    );
+
+    fn run(&mut self, (entities, mut input_state, updater): Self::SystemData) {
+        if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::K)) {
+            let new_entity = entities.create();
+            let new_car = self.vehicle_mgr.spawn_random_close_to_protagonist();
+            updater.insert(
+                new_entity,
+                new_car
+            );
+        }
+    }
 }
