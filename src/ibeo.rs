@@ -72,7 +72,7 @@ impl IbeoPublisher {
 
 pub trait VehicleStatesListener { 
     fn on_protagonist_state<'a>(&'a mut self, protagonist: &'a Car);
-    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : Box<dyn Iterator<Item = &'a Car> + 'a>);
+    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : &'a Vec<&'a Car>);
 }
 
 impl VehicleStatesListener for IbeoPublisher {
@@ -136,7 +136,7 @@ impl VehicleStatesListener for IbeoPublisher {
 
     }
 
-    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : Box<dyn Iterator<Item = &'a Car> + 'a>) {
+    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : &'a Vec<&'a Car>) {
         let mut msg = msg::ibeo_msgs::ObjectListEcu::default();
         msg.header.frame_id = String::from("ibeo");
         msg.header.stamp = rosrust::now();

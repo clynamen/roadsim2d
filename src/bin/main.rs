@@ -327,6 +327,34 @@ impl <'a, 'b> System<'a> for ControlProtagonistSys<'b> {
     }
 }
 
+pub struct IbeoSensorSys<'a> {
+    vehicle_state_listeners : &'a mut Vec<Box<VehicleStatesListener>>
+}
+
+impl <'a, 'b> System<'a> for IbeoSensorSys<'b> {
+    type SystemData = (
+        ReadStorage<'a, Car>,
+        ReadStorage<'a, ProtagonistTag>,
+    );
+
+    fn run(&mut self, (mut cars, protagonists): Self::SystemData) {
+        let mut other_cars = Vec::<&Car>::new(); 
+        for (car, ()) in (&cars, !&protagonists).join() {
+            other_cars.push(car);
+        }
+
+        for (car, _protagonist) in (&cars, &protagonists).join() {
+            let protagonist_car = car;
+            for listener in &mut (self.vehicle_state_listeners).iter_mut() {
+                listener.on_vehicle_states(protagonist_car, &other_cars);
+                listener.on_protagonist_state(protagonist_car);
+            }
+        }
+
+    }
+}
+
+
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct ProtagonistTag;
@@ -360,21 +388,14 @@ fn main() {
         target_protagonist_twist_locked.z_rot = z_rot;
     });
 
-    // let protagonist_twist_subscriber = rosrust::subscribe("roadsim2d/protagonist_twist", move |v: msg::geometry_msgs::Twist| {
-    //     target_protagonist_twist_locked.x = v.linear.x;
-    //     target_protagonist_twist_locked.z_rot = v.angular.z;
-    // }).unwrap();
-
     let mut previous_frame_end_timestamp = time::Instant::now();
     let previous_msg_stamp = time::Instant::now();
 
     let mut grid = Grid::new();
     let mut camera = Camera::new( Vec2f64{x: 0.0, y: 0.0}, 40.0);
 
-    // for e in window.events().ups(60).max_fps(60) {
     let mut simulation = Simulation::new();
 
-    //let mut vehicle_manager_key_mapping = VehicleManagerKeyMapping::new();
     let mut vehicle_manager_key_mapping = build_key_mapping_for_vehicle_manager();
     let mut camera_key_mapping = build_key_mapping_for_camera_manager();
 
@@ -382,11 +403,12 @@ fn main() {
 
 
     let mut world = World::new();
+
     world.register::<Car>();
     world.register::<Camera>();
     world.register::<Grid>();
     world.register::<ProtagonistTag>();
-    // world.register::<Position>();
+
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
     world.add_resource(UpdateDeltaTime { dt: 1.0 });
@@ -396,15 +418,6 @@ fn main() {
 
     world.create_entity().with(protagonist_car).with(ProtagonistTag{}).build();
     world.add_resource(camera);
-
-
-
-    // world.create_entity().with(Position { x: 4.0, y: 7.0 }).build();
-    // let mut dispatcher = DispatcherBuilder::new()
-    //     .with(UpdateCars, "draw_car", &[])
-    //     .with_thread_local(RenderSys{fps_window})
-    //     .build();
-
 
     while let Some(e) = fps_window.next() {
         if let Some(args) = e.press_args() {
@@ -435,18 +448,9 @@ fn main() {
             let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
             ControlProtagonistSys{target_protagonist_twist: &target_protagonist_twist_locked}.run_now(&mut world.res);
             UpdateCarsSys.run_now(&mut world.res);
+            IbeoSensorSys{vehicle_state_listeners: &mut vehicle_state_listeners}.run_now(&mut world.res);
 
             // rosrust::sleep(rosrust::Duration::from_nanos(1e6 as i64 ));
-
-            // let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
-            // vehicle_mgr.set_protagonist_speed(
-            //     target_protagonist_twist_locked.x, 
-            //     target_protagonist_twist_locked.z_rot
-            //     );
-
-
-            // camera.set_target_trals(vehicle_mgr.get_protagonist_vehicle().pose.center);
-            // simulation.update_camera(&mut camera, args.dt, fps_window.draw_size());
         }
 
         if let Some(_args) = e.render_args() {
