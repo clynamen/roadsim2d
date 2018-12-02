@@ -202,12 +202,19 @@ impl <'a, 'b> System<'a> for UpdateCameraSys<'b> {
         WriteExpect<'a, InputState>,
         ReadExpect<'a, UpdateDeltaTime>, 
         WriteExpect<'a, Camera>,
+        ReadStorage<'a, Car>, 
+        ReadStorage<'a, ProtagonistTag>, 
     );
 
 
-    fn run(&mut self, (mut input_state, update_delta_time, mut camera): Self::SystemData) {
+    fn run(&mut self, (mut input_state, update_delta_time, mut camera, cars, protagonists): Self::SystemData) {
         camera.update_cam(update_delta_time.dt, &input_state.buttons_held, self.window_size);
         self.camera_key_mapping.process_buttons(&input_state.buttons_held, &mut camera);
+
+        for (car, protagonist) in (&cars, &protagonists).join() {
+            camera.set_target_trals(car.pose.center);
+        }
+
     }
 
 }
@@ -438,10 +445,6 @@ fn main() {
             //     );
 
 
-            // vehicle_manager_key_mapping.process_buttons(simulation.get_buttons(), &mut vehicle_mgr);
-            // camera_key_mapping.process_buttons(simulation.get_buttons(), &mut camera);
-
-            // grid.set_reference_zoom_level(camera.get_zoom_level());
             // camera.set_target_trals(vehicle_mgr.get_protagonist_vehicle().pose.center);
             // simulation.update_camera(&mut camera, args.dt, fps_window.draw_size());
         }
