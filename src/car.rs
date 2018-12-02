@@ -44,14 +44,14 @@ impl Component for Car {
 
 
 impl Car {
-    pub fn update(self: &mut Car, dt: f32) {
+    pub fn update(self: &mut Car, dt: f64) {
         let rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(self.pose.yaw));
-        let ds  = Vector2{x: self.longitudinal_speed as f64 * dt as f64, y: 0.0};
+        let ds  = Vector2{x: (self.longitudinal_speed as f64) * dt, y: 0.0};
         let rotated_ds = rot.rotate_vector(ds);
         self.pose.center += rotated_ds;
 
         // let direction_to_center = Vector2{x:400.0, y:400.0} - self.pose.center.to_vec();
-        self.pose.yaw += (self.yaw_rate * dt) as f64;
+        self.pose.yaw += (self.yaw_rate as f64 * dt) as f64;
         self.pose.yaw %= 2.0*std::f64::consts::PI;
     }
 }
@@ -67,7 +67,7 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
         x: rand::thread_rng().gen_range(-400.0, 400.0), 
         y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
         yaw: 1.0}, 
-        longitudinal_speed: rand::thread_rng().gen_range(0.1, 2.0), 
+        longitudinal_speed: rand::thread_rng().gen_range(1.0, 2.0), 
         yaw_rate: 0.01,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()

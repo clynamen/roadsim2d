@@ -22,7 +22,8 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 use std::collections::HashSet;
-use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, ReadExpect, WriteExpect, RunNow};
+use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join};
 
 
 #[derive(Default)]
@@ -97,18 +98,17 @@ impl<'a, 'b> System<'a> for RenderCarSys<'b> {
     }
 }
 
-struct UpdateCars;
+struct UpdateCarsSys;
 
-impl<'a> System<'a> for UpdateCars {
-    type SystemData = (ReadStorage<'a, Car>);
+impl<'a> System<'a> for UpdateCarsSys {
+    type SystemData = (ReadExpect<'a, UpdateDeltaTime>, WriteStorage<'a, Car>);
 
-    fn run(&mut self, (car): Self::SystemData) {
-        use specs::Join;
-
-        for car in car.join() {
-            println!("update car");
+    fn run(&mut self, (update_delta_time, mut cars): Self::SystemData) {
+        for car in (&mut cars).join() {
+            car.update(update_delta_time.dt);
         }
     }
+
 }
 
 impl<'a> System<'a> for RenderSys   {
@@ -159,22 +159,31 @@ impl InputEvents {
     }
 }
 
+#[derive(Debug)]
 pub struct InputState {
+    pub buttons_pre_pressed: HashSet<piston_window::Button>,
+    pub buttons_post_pressed: HashSet<piston_window::Button>,
+    pub buttons_pressed: HashSet<piston_window::Button>,
     pub buttons_held: HashSet<piston_window::Button>
 }
 
 impl InputState {
     pub fn new() -> Self {
         InputState {
+            buttons_pre_pressed: HashSet::new(),
+            buttons_post_pressed: HashSet::new(),
+            buttons_pressed: HashSet::new(),
             buttons_held: HashSet::new(),
         }
     }
 
     pub fn button_press(&mut self, button: piston_window::Button) {
+        self.buttons_pre_pressed.insert(button);
         self.buttons_held.insert(button);
     }
 
     pub fn button_release(&mut self, button: piston_window::Button) {
+        self.buttons_post_pressed.remove(&button);
         self.buttons_held.remove(&button);
     }
 
@@ -201,11 +210,45 @@ impl <'a, 'b> System<'a> for UpdateCameraSys<'b> {
 
 }
 
-pub struct HandleInputEventSys;
-
 pub struct UpdateDeltaTime {
     pub dt: f64,
 }
+
+pub struct UpdateInputStateSys;
+
+impl <'a> System<'a> for UpdateInputStateSys {
+    type SystemData = (
+        WriteExpect<'a, InputState>,
+    );
+
+    fn run(&mut self, (mut input_state, ): Self::SystemData) {
+        let mut new_pressed_buttons = Vec::<piston_window::Button>::new();
+        let mut old_pressed_buttons = Vec::<piston_window::Button>::new();
+
+        for button in &input_state.buttons_pre_pressed {
+            if !input_state.buttons_post_pressed.contains(&button) {
+                new_pressed_buttons.push(button.clone());
+            }
+        }
+
+        for button in &input_state.buttons_pressed {
+            old_pressed_buttons.push(button.clone());
+        }
+        for button in old_pressed_buttons {
+            input_state.buttons_post_pressed.insert(button);
+        }
+
+        input_state.buttons_pre_pressed.clear();
+        input_state.buttons_pressed.clear();
+
+        for button in new_pressed_buttons {
+            input_state.buttons_pressed.insert(button);
+        }
+
+    }
+}
+
+pub struct HandleInputEventSys;
 
 
 impl <'a> System<'a> for HandleInputEventSys {
@@ -229,6 +272,30 @@ impl <'a> System<'a> for HandleInputEventSys {
                 },
             };
 
+        }
+    }
+}
+
+pub struct SpawnNewCarSys<'a> {
+    vehicle_mgr: &'a mut VehicleManager
+}
+
+
+impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
+    type SystemData = (
+        Entities<'a>,
+        WriteExpect<'a, InputState>,
+        Read<'a, LazyUpdate>
+    );
+
+    fn run(&mut self, (entities, mut input_state, updater): Self::SystemData) {
+        if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::K)) {
+            let new_entity = entities.create();
+            let new_car = self.vehicle_mgr.spawn_random_close_to_protagonist();
+            updater.insert(
+                new_entity,
+                new_car
+            );
         }
     }
 }
@@ -326,8 +393,15 @@ fn main() {
                 update_delta_time.dt = args.dt;
             };
             let window_size = fps_window.draw_size();
+
+            UpdateInputStateSys{}.run_now(&mut world.res);
+
             UpdateCameraSys{window_size, camera_key_mapping: &mut camera_key_mapping}.run_now(&mut world.res);
             UpdateGridSys{}.run_now(&mut world.res);
+
+            SpawnNewCarSys{vehicle_mgr: &mut vehicle_mgr}.run_now(&mut world.res);
+            UpdateCarsSys.run_now(&mut world.res);
+
             // rosrust::sleep(rosrust::Duration::from_nanos(1e6 as i64 ));
             // grid.update(simulation.get_buttons());
 
@@ -354,28 +428,7 @@ fn main() {
             RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             world.maintain();
-            // let now = time::Instant::now();
-            // let dt = now-previous_frame_end_timestamp;
-            // let dt_s = (dt.as_millis() as f32)/1000.0f32;
-
             // let protagonist_car = vehicle_mgr.get_protagonist_vehicle();
-
-            // fps_window.draw_2d(&e, |context, graphics| {
-            //     clear([1.0; 4], graphics);
-            //     let mut context = context;
-            //     let new_trans = camera.apply(context.transform);
-            //     context.transform = new_trans;
-            //     grid.draw(context, graphics);
-            //     draw_car(context, graphics,
-            //         protagonist_car.pose.center, protagonist_car.pose.yaw,
-            //         protagonist_car.bb_size, protagonist_car.color);
-            //     let cars = vehicle_mgr.get_non_playable_vehicles();
-            //     for car in cars.iter() {
-            //         draw_car(context, graphics,
-            //             car.pose.center, car.pose.yaw, 
-            //             car.bb_size, car.color);
-            //     }
-            // });
 
             // vehicle_mgr.update(dt_s);
 

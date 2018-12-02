@@ -121,7 +121,7 @@ impl VehicleManager {
         self.protagonist_vehicle.yaw_rate = yaw_rate as f32;
     }
 
-    pub fn spawn_random_close_to_protagonist(&mut self) {
+    pub fn spawn_random_close_to_protagonist(&mut self) -> Car {
         let mut new_car = random_car(&mut *self.id_provider);
 
         let protagonist_trasl = self.protagonist_vehicle.pose.center;
@@ -137,17 +137,18 @@ impl VehicleManager {
 
         new_car.pose = new_car_pose;
 
-        self.non_playable_vehicles.push(new_car);
+        // self.non_playable_vehicles.push(new_car);
         self.last_spawn_time = time::Instant::now();
+        new_car
     }
 
     pub fn update(&mut self, dt_s: f32) {
         let protagonist_car_center = self.protagonist_vehicle.pose.center;
         self.non_playable_vehicles.retain(|vehicle| vehicle.pose.center.distance(protagonist_car_center) < 1.0e3);
 
-        &mut self.protagonist_vehicle.update(dt_s);
+        // &mut self.protagonist_vehicle.update(dt_s);
         for car in &mut self.non_playable_vehicles {
-            car.update(dt_s);
+            // car.update(dt_s);
         }
     }
 }
