@@ -38,8 +38,27 @@ struct RenderSys {
 
 struct RenderCarSys<'a> {
     fps_window: &'a mut PistonWindow,
-    render_event: Event,
+    render_event: &'a Event,
     render_args:  RenderArgs, 
+}
+
+struct RenderGridSys<'a> {
+    fps_window: &'a mut PistonWindow,
+    render_event: &'a Event,
+    render_args:  RenderArgs, 
+}
+
+impl<'a, 'b> System<'a> for RenderGridSys<'b> {
+    type SystemData = (ReadExpect<'a, Grid>, ReadExpect<'a, Camera>);
+
+    fn run(&mut self, (grid, camera): Self::SystemData) {
+        self.fps_window.draw_2d(self.render_event, |context, graphics| {
+            let mut context = context;
+            let new_trans = camera.apply(context.transform);
+            context.transform = new_trans;
+            grid.draw(context, graphics);
+        });
+    }
 }
 
 impl<'a, 'b> System<'a> for RenderCarSys<'b> {
@@ -48,8 +67,7 @@ impl<'a, 'b> System<'a> for RenderCarSys<'b> {
     fn run(&mut self, (car, camera): Self::SystemData) {
         use specs::Join;
 
-        self.fps_window.draw_2d(&self.render_event, |context, graphics| {
-            clear([1.0; 4], graphics);
+        self.fps_window.draw_2d(self.render_event, |context, graphics| {
             let mut context = context;
             let new_trans = camera.apply(context.transform);
             context.transform = new_trans;
@@ -101,6 +119,24 @@ impl<'a> System<'a> for RenderSys   {
 
     }
 }
+
+struct UpdateGridSys;
+
+
+impl<'a> System<'a> for UpdateGridSys   {
+    type SystemData = (
+        ReadExpect<'a, UpdateDeltaTime>, 
+        ReadExpect<'a, Camera>,
+        ReadExpect<'a, InputState>,
+        WriteExpect<'a, Grid>,
+    );
+
+    fn run(&mut self, (update_delta_time, camera, input_state, mut grid): Self::SystemData) {
+        grid.update(&input_state.buttons_held);
+        grid.set_reference_zoom_level(camera.get_zoom_level());
+    }
+}
+
 
 // credits to https://github.com/andreivasiliu/stacked-worlds on how to handle specs and input
 
@@ -250,10 +286,12 @@ fn main() {
     let mut world = World::new();
     world.register::<Car>();
     world.register::<Camera>();
+    world.register::<Grid>();
     // world.register::<Position>();
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
     world.add_resource(UpdateDeltaTime { dt: 1.0 });
+    world.add_resource(grid);
 
     let protagonist_car = vehicle_mgr.make_protagonist_car();
 
@@ -289,6 +327,7 @@ fn main() {
             };
             let window_size = fps_window.draw_size();
             UpdateCameraSys{window_size, camera_key_mapping: &mut camera_key_mapping}.run_now(&mut world.res);
+            UpdateGridSys{}.run_now(&mut world.res);
             // rosrust::sleep(rosrust::Duration::from_nanos(1e6 as i64 ));
             // grid.update(simulation.get_buttons());
 
@@ -309,7 +348,11 @@ fn main() {
 
         if let Some(_args) = e.render_args() {
 
-            RenderCarSys{fps_window: &mut fps_window, render_event: e, render_args: _args}.run_now(&mut world.res);
+            fps_window.draw_2d(&e, |context, graphics| {
+                clear([1.0; 4], graphics);
+            });
+            RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
+            RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             world.maintain();
             // let now = time::Instant::now();
             // let dt = now-previous_frame_end_timestamp;
