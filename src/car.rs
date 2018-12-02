@@ -6,6 +6,7 @@ use piston_window::*;
 use super::color_utils::*;
 use super::primitives::*;
 use super::sim_id::*;
+use specs::{Component, VecStorage};
 
 
 pub fn draw_car(context: Context, graphics: &mut G2d, 
@@ -35,6 +36,10 @@ pub struct Car {
     pub yaw_rate: f32,
     pub bb_size : Size2f64,
     pub color: Color
+}
+
+impl Component for Car {
+    type Storage = VecStorage<Self>;
 }
 
 

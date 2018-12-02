@@ -67,16 +67,16 @@ impl Simulation {
     }
 
     pub fn update_camera(&self, camera: &mut Camera, dt: f64, window_size: piston_window::Size) {
-        let ctx = UpdateContext {
-            dt: dt,
-            // prev_dt: match self.prev_dt {
-            //     Some(prev_dt) => prev_dt,
-            //     None => args.dt,
-            // },
-            buttons: &self.buttons,
-        };
+        // let ctx = UpdateContext {
+        //     dt: dt,
+        //     // prev_dt: match self.prev_dt {
+        //     //     Some(prev_dt) => prev_dt,
+        //     //     None => args.dt,
+        //     // },
+        //     buttons: &self.buttons,
+        // };
 
-        camera.update_cam(&ctx, window_size);
+        // camera.update_cam(&ctx, window_size);
     }
 
     // pub fn update(&mut self, args: &input::UpdateArgs) {

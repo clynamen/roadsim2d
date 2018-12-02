@@ -66,6 +66,20 @@ impl VehicleManager {
         &self.protagonist_vehicle
     }
 
+    pub fn make_protagonist_car(&mut self) -> Car {
+        Car {
+            id: self.id_provider.next(),
+            pose: Pose2DF64 {
+                center: Point2f64 { x: 0.0, y: 0.0 },
+                yaw: 0.0,
+            },
+            longitudinal_speed: 0.0,
+            yaw_rate: 0.0,
+            bb_size: Size2f64::new(1.5, 3.0),
+            color: rgb(1.0, 0.0, 1.0),
+        }
+    }
+
     pub fn new(mut id_provider: Box<IdProvider>) -> VehicleManager {
         let protagonist_car = Car {
             id: id_provider.next(),

@@ -7,6 +7,7 @@ extern crate rand;
 extern crate euclid;
 extern crate conrod;
 extern crate rosrust;
+extern crate specs;
 #[macro_use]
 extern crate rosrust_codegen;
 
