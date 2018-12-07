@@ -123,7 +123,13 @@ impl VehicleManager {
 
     pub fn set_protagonist_speed(&mut self, speed: f64, yaw_rate: f64) {
         self.protagonist_vehicle.longitudinal_speed = speed as f32;
-        self.protagonist_vehicle.yaw_rate = yaw_rate as f32;
+        let yaw_increment = (yaw_rate as f32 - self.protagonist_vehicle.yaw_rate);  
+        let max_yaw_increment = 0.2f32;
+        let yaw_increment_clamped = f32::max(-max_yaw_increment, f32::min(max_yaw_increment, yaw_increment));
+
+        let new_wheel_yaw = yaw_increment / self.protagonist_vehicle.longitudinal_speed * (self.protagonist_vehicle.bb_size.height as f32 / 2.0f32);
+        println!("new wheel yaw: {} yaw_increment {}", new_wheel_yaw, yaw_increment);
+        self.protagonist_vehicle.wheel_yaw = new_wheel_yaw;
     }
 
     pub fn spawn_random_close_to_protagonist(&mut self) -> Car {

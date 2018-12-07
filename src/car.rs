@@ -35,14 +35,14 @@ pub fn draw_car(context: Context, graphics: &mut G2d,
                     [0.0, -wheel_width/2.0, 
                     wheel_height, 
                     wheel_width],
-                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, -car_size.width/2.0+wheel_width).rot_rad(wheel_rot),
+                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, -car_size.width/2.0+wheel_width).rot_rad(-wheel_rot),
                     graphics);
 
         rectangle( black, 
                     [0.0,  -wheel_width/2.0, 
                     wheel_height, 
                     wheel_width],
-                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, car_size.width/2.0-wheel_width).rot_rad(wheel_rot),
+                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, car_size.width/2.0-wheel_width).rot_rad(-wheel_rot),
                     graphics);
 
 }
@@ -70,8 +70,10 @@ impl Car {
         let rotated_ds = rot.rotate_vector(ds);
         self.pose.center += rotated_ds;
 
+        let yaw_increment = self.longitudinal_speed / (self.bb_size.height as f32 / 2.0f32)  *  self.wheel_yaw;
+
         // let direction_to_center = Vector2{x:400.0, y:400.0} - self.pose.center.to_vec();
-        self.pose.yaw += (self.yaw_rate as f64 * dt) as f64;
+        self.pose.yaw += (yaw_increment as f64 * dt) as f64;
         self.pose.yaw %= 2.0*std::f64::consts::PI;
     }
 }
@@ -89,9 +91,9 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
             y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
             yaw: 1.0
         }, 
-        wheel_yaw: rand::thread_rng().gen_range(-1.0, 1.0),
+        wheel_yaw: rand::thread_rng().gen_range(-0.3, 0.3),
         longitudinal_speed: rand::thread_rng().gen_range(5.0, 10.0), 
-        yaw_rate: 0.01,
+        yaw_rate: 0.0,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()
     }

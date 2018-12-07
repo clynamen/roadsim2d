@@ -37,11 +37,12 @@ use  nalgebra::Vector2;
 
 fn print_commands() {
     let commands = r#"
-q: zoom_out
-e: zoom_in
-c: switch camera mode (move/follow)
-k: spawn vehicle
-g: hide/show grid
+q:      zoom_out
+e:      zoom_in
+c:      switch camera mode (move/follow)
+k:      spawn vehicle
+g:      hide/show grid
+arrows: move camera in 'move' mode
 "#;
     println!("{}", commands);
 }
