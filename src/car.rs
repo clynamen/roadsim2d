@@ -13,13 +13,12 @@ use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage
 
 
 pub fn draw_car(context: Context, graphics: &mut G2d, 
-    center: Point2f64, rot: f64, car_size: Size2f64, color: Color)  {
+    center: Point2f64, rot: f64, car_size: Size2f64, wheel_rot: f64, color: Color)  {
         // note: some vector must be reversed due to the fact that piston_2d Y points toward bottom of screen
         let reverse_y_center = Point2f64{x: center.x, y: -center.y};
         let reverse_y_rot = -rot;
         let car_center = reverse_y_center + Vec2f64{x: car_size.height/2.0, y: car_size.width/2.0};
         let center = context.transform.trans(car_center.x, car_center.y);
-        // let square = rectangle::square(0.0, 0.0, 100.0);
         rectangle( to_rgba(&color, 1.0f32), 
                     [-car_size.height/2.0, 
                     -car_size.width/2.0, 
@@ -27,14 +26,32 @@ pub fn draw_car(context: Context, graphics: &mut G2d,
                     car_size.width],
                     center.rot_rad(reverse_y_rot),
                     graphics);
-        // rectangle( [0.0, 1.0, 0.0, 1.0],
-        //             [-1.0, -1.0, 2.0, 2.0], center, graphics);
+
+        let wheel_width : f64 = 0.3;
+        let wheel_height : f64 = 0.6;
+        let black = [0.0f32, 0.0f32, 0.0f32, 1.0f32];
+
+        rectangle(black, 
+                    [0.0, -wheel_width/2.0, 
+                    wheel_height, 
+                    wheel_width],
+                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, -car_size.width/2.0+wheel_width).rot_rad(wheel_rot),
+                    graphics);
+
+        rectangle( black, 
+                    [0.0,  -wheel_width/2.0, 
+                    wheel_height, 
+                    wheel_width],
+                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, car_size.width/2.0-wheel_width).rot_rad(wheel_rot),
+                    graphics);
+
 }
 
 #[derive(Clone, Debug)]
 pub struct Car {
     pub id : u64,
     pub pose : Pose2DF64,     
+    pub wheel_yaw: f32,
     pub longitudinal_speed : f32, 
     pub yaw_rate: f32,
     pub bb_size : Size2f64,
@@ -66,15 +83,18 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
         
     return Car{
         id: id_provider.next(),
-        pose: Pose2DF64 {center: Point2f64{
-        x: rand::thread_rng().gen_range(-400.0, 400.0), 
-        y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
-        yaw: 1.0}, 
-        longitudinal_speed: rand::thread_rng().gen_range(1.0, 2.0), 
+        pose: Pose2DF64 {
+            center: Point2f64{
+            x: rand::thread_rng().gen_range(-400.0, 400.0), 
+            y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
+            yaw: 1.0
+        }, 
+        wheel_yaw: rand::thread_rng().gen_range(-1.0, 1.0),
+        longitudinal_speed: rand::thread_rng().gen_range(5.0, 10.0), 
         yaw_rate: 0.01,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()
-        }
+    }
 }
 
 pub struct RenderCarSys<'a> {
@@ -95,25 +115,11 @@ impl<'a, 'b> System<'a> for RenderCarSys<'b> {
             let new_trans = camera.apply(context.transform);
             context.transform = new_trans;
 
-            // grid.draw(context, graphics);
-            // draw_car(context, graphics,
-            //     protagonist_car.pose.center, protagonist_car.pose.yaw,
-            //     protagonist_car.bb_size, protagonist_car.color);
-
-            // let cars = vehicle_mgr.get_non_playable_vehicles();
             for car in car.join() {
                 draw_car(context, graphics,
                     car.pose.center, car.pose.yaw, 
-                    car.bb_size, car.color);
+                    car.bb_size, car.wheel_yaw as f64, car.color);
             }
-
-            // rectangle( [0.5f32, 0.0f32, 1.0f32, 0.5f32], 
-            //             [-1.0, 
-            //             -1.0, 
-            //             200.0, 
-            //             200.0],
-            //             context.transform,
-            //             graphics);
 
         });
 

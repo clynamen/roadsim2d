@@ -3,6 +3,7 @@
 #![feature(unboxed_closures)] 
 #[macro_use]
 extern crate specs_derive;
+extern crate nphysics2d;
 
 // #[macro_use]
 // extern crate rosrust;
@@ -13,6 +14,12 @@ extern crate rand;
 extern crate euclid;
 extern crate conrod;
 extern crate specs;
+extern crate nalgebra;
+extern crate ncollide2d;
+
+use nphysics2d::object::RigidBody;
+use nphysics2d::object::BodyHandle;
+use nphysics2d::world::World as PWorld;
 
 
 extern crate roadsim2dlib;
@@ -26,7 +33,18 @@ use std::collections::VecDeque;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
+use  nalgebra::Vector2;
 
+fn print_commands() {
+    let commands = r#"
+q: zoom_out
+e: zoom_in
+c: switch camera mode (move/follow)
+k: spawn vehicle
+g: hide/show grid
+"#;
+    println!("{}", commands);
+}
 
 fn main() {
     let mut window: PistonWindow =
@@ -72,20 +90,30 @@ fn main() {
 
     let mut world = World::new();
 
+    let mut physics_world = PWorld::new();
+    physics_world.set_gravity(Vector2::new(0.0, 0.0));
+
     world.register::<Car>();
     world.register::<Camera>();
     world.register::<Grid>();
     world.register::<ProtagonistTag>();
+    world.register::<PhysicsComponent>();
 
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
     world.add_resource(UpdateDeltaTime { dt: 1.0 });
     world.add_resource(grid);
 
+
     let protagonist_car = vehicle_mgr.make_protagonist_car();
 
-    world.create_entity().with(protagonist_car).with(ProtagonistTag{}).build();
+    world.create_entity()
+        .with(make_physics_for_car(&mut physics_world, &protagonist_car))
+        .with(protagonist_car)
+        .with(ProtagonistTag{}).build();
     world.add_resource(camera);
+
+    print_commands();
 
     while let Some(e) = fps_window.next() {
         if let Some(args) = e.press_args() {
@@ -106,6 +134,10 @@ fn main() {
                 update_delta_time.dt = args.dt;
             };
             let window_size = fps_window.draw_size();
+
+            // physics_world.step(args.dt);
+
+            // PhysicsUpdateNodeSys{}.run_now(&mut world.res);
 
             UpdateInputStateSys{}.run_now(&mut world.res);
 

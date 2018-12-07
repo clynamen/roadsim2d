@@ -2,6 +2,7 @@
 #![feature(duration_as_u128)]
 #![feature(fn_traits)]
 #![feature(unboxed_closures)] 
+#![feature(uniform_paths)] 
 extern crate piston_window;
 extern crate piston;
 extern crate rand;
@@ -33,6 +34,8 @@ mod twist_subscriber;
 mod global_resources;
 mod input;
 mod protagonist;
+mod node;
+mod physics;
 
 pub use std::time;
 pub use piston_window::*;
@@ -51,3 +54,5 @@ pub use self::msg::*;
 pub use self::twist_subscriber::*;
 pub use self::global_resources::*;
 pub use self::protagonist::*;
+pub use self::node::*;
+pub use self::physics::*;
