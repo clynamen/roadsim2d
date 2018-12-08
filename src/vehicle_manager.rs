@@ -36,35 +36,35 @@ pub struct VehicleManager {
 }
 
 
-pub fn build_key_mapping_for_vehicle_manager() -> KeyActionMapper<VehicleManager>  {
-    let mut vehicle_manager_key_mapping = KeyActionMapper::<VehicleManager>::new();
-    vehicle_manager_key_mapping.add_action(piston_window::Key::K, 200,  |mgr: &mut VehicleManager| {
-                mgr.spawn_random_close_to_protagonist();
-            });
-    vehicle_manager_key_mapping.add_action(piston_window::Key::X, 200,  |mgr: &mut VehicleManager| {
-                mgr.non_playable_vehicles.clear();
-            });
-    vehicle_manager_key_mapping
-}
+// pub fn build_key_mapping_for_vehicle_manager() -> KeyActionMapper<VehicleManager>  {
+//     let mut vehicle_manager_key_mapping = KeyActionMapper::<VehicleManager>::new();
+//     vehicle_manager_key_mapping.add_action(piston_window::Key::K, 200,  |mgr: &mut VehicleManager| {
+//                 mgr.spawn_random_close_to_protagonist();
+//             });
+//     vehicle_manager_key_mapping.add_action(piston_window::Key::X, 200,  |mgr: &mut VehicleManager| {
+//                 mgr.non_playable_vehicles.clear();
+//             });
+//     vehicle_manager_key_mapping
+// }
 
-impl VehicleManagerKeyMapping {
-    pub fn new() -> VehicleManagerKeyMapping {
-        let mut key_action_map: HashMap<
-            piston_window::Key,
-            Box<Debouncer<VehicleManager>>,
-        > = HashMap::new();
-        let debouncer: Debouncer<VehicleManager> =
-            Debouncer::from_millis(200, |mgr: &mut VehicleManager| {
-                mgr.spawn_random_close_to_protagonist();
-            });
-        let debouncer_box = Box::new(debouncer);
-        key_action_map.insert(piston_window::Key::K, debouncer_box);
+// impl VehicleManagerKeyMapping {
+//     pub fn new() -> VehicleManagerKeyMapping {
+//         let mut key_action_map: HashMap<
+//             piston_window::Key,
+//             Box<Debouncer<VehicleManager>>,
+//         > = HashMap::new();
+//         // let debouncer: Debouncer<VehicleManager> =
+//         //     Debouncer::from_millis(200, |mgr: &mut VehicleManager| {
+//         //         mgr.spawn_random_close_to_protagonist();
+//         //     });
+//         // let debouncer_box = Box::new(debouncer);
+//         // key_action_map.insert(piston_window::Key::K, debouncer_box);
 
-        VehicleManagerKeyMapping {
-            key_action_map: key_action_map
-        }
-    }
-}
+//         VehicleManagerKeyMapping {
+//             key_action_map: key_action_map
+//         }
+//     }
+// }
 
 impl VehicleManager {
     pub fn get_non_playable_vehicles(&self) -> &Vec<Car> {
@@ -112,28 +112,28 @@ impl VehicleManager {
         }
     }
 
-    pub fn spawn_random_close_to_protagonist(&mut self) -> Car {
-        let mut new_car = random_car(&mut *self.id_provider);
+    // pub fn spawn_random_close_to_protagonist(&mut self) -> Car {
+    //     let mut new_car = random_car(&mut *self.id_provider);
 
-        // let protagonist_trasl = self.protagonist_vehicle.pose.center;
-        let protagonist_trasl = Point2f64{x: 0.0, y: 0.0};
+    //     // let protagonist_trasl = self.protagonist_vehicle.pose.center;
+    //     let protagonist_trasl = Point2f64{x: 0.0, y: 0.0};
 
-        let mut new_car_pose = Pose2DF64::default();
+    //     let mut new_car_pose = Pose2DF64::default();
 
-        new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(10.0, 20.0);
-        new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0);
+    //     new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(15.0, 30.0) * thread_rng().gen_range(-1, 1) as f64;
+    //     new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(15.0, 30.0) * thread_rng().gen_range(-1, 1) as f64;
 
-        let protagonist_ds = protagonist_trasl - new_car_pose.center;
-        let angle = Vec2f64::unit_x().angle(protagonist_ds);
+    //     let protagonist_ds = protagonist_trasl - new_car_pose.center;
+    //     let angle = Vec2f64::unit_x().angle(protagonist_ds);
 
-        new_car_pose.yaw = std::f64::consts::PI / 2.0 * angle.sin().signum() + thread_rng().gen_range(-1.0, 1.0);
+    //     new_car_pose.yaw = std::f64::consts::PI / 2.0 * angle.sin().signum() + thread_rng().gen_range(-1.0, 1.0);
 
-        new_car.pose = new_car_pose;
+    //     new_car.pose = new_car_pose;
 
-        // self.non_playable_vehicles.push(new_car);
-        self.last_spawn_time = time::Instant::now();
-        new_car
-    }
+    //     // self.non_playable_vehicles.push(new_car);
+    //     self.last_spawn_time = time::Instant::now();
+    //     new_car
+    // }
 
 }
 
@@ -197,8 +197,8 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 let protagonist_trasl = node.pose.center;
                 let mut new_car_pose = Pose2DF64::default();
 
-                new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(10.0, 20.0);
-                new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0);
+                new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(10.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
+                new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
 
                 let protagonist_ds = protagonist_trasl - new_car_pose.center;
                 let angle = Vec2f64::unit_x().angle(protagonist_ds);

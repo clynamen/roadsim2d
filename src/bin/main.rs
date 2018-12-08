@@ -83,7 +83,6 @@ fn main() {
 
     let mut simulation = Simulation::new();
 
-    let mut vehicle_manager_key_mapping = build_key_mapping_for_vehicle_manager();
     let mut camera_key_mapping = build_key_mapping_for_camera_manager();
 
     let mut fps_window = window.max_fps(30);

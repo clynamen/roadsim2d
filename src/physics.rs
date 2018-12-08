@@ -4,7 +4,7 @@ extern crate nalgebra as na;
 use nphysics2d::object::BodyHandle;
 
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
- Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
+ Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, ParJoin, VecStorage, Component};
 use nphysics2d::object::RigidBody;
 use nphysics2d::object::Material;
 use nphysics2d::world::World as PWorld;

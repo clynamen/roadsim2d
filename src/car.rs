@@ -53,14 +53,14 @@ pub fn draw_car(context: Context, graphics: &mut G2d,
                     [0.0, -wheel_width/2.0, 
                     wheel_height, 
                     wheel_width],
-                    center.rot_rad(reverse_y_rot).trans(wheel_base/2.0-wheel_height/2.0, -car_size.width/2.0+wheel_width).rot_rad(-wheel_rot),
+                    center.rot_rad(reverse_y_rot).trans(wheel_base/2.0-wheel_height, -car_size.width/2.0+wheel_width).rot_rad(-wheel_rot),
                     graphics);
 
         rectangle( black, 
                     [0.0,  -wheel_width/2.0, 
                     wheel_height, 
                     wheel_width],
-                    center.rot_rad(reverse_y_rot).trans(wheel_base/2.0-wheel_height/2.0, car_size.width/2.0-wheel_width).rot_rad(-wheel_rot),
+                    center.rot_rad(reverse_y_rot).trans(wheel_base/2.0-wheel_height, car_size.width/2.0-wheel_width).rot_rad(-wheel_rot),
                     graphics);
 
 }

@@ -174,7 +174,6 @@ impl VehicleStatesListener for IbeoPublisher {
             object_msg.bounding_box.size.width = vehicle_state.bb_size.width;
             object_msg.bounding_box.size.height = vehicle_state.bb_size.height;
 
-            // TODO: set speed here
             object_msg.abs_vel.x = vehicle_state.longitudinal_speed;
 
             msg.objects.push(object_msg);
