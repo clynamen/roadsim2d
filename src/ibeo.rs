@@ -1,9 +1,13 @@
 use super::car::*;
 use super::protagonist::*;
+use super::primitives::*;
+use super::physics::*;
+use super::node::*;
 
 use super::msg;
 use rosrust::api::raii::Publisher;
 use cgmath::*;
+use nphysics2d::world::World as PWorld;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 
@@ -16,6 +20,13 @@ enum IbeoClassification {
     CAR,
     TRUCK,
     UNDERIVABLE,
+}
+
+struct IbeoVehicleState {
+    id: i32,
+    pose: Pose2DF64,
+    bb_size: Size2f64,
+    longitudinal_speed: f64,
 }
 
 fn publish_tf_trasl_euler(tf_pub: &mut Publisher<msg::tf2_msgs::TFMessage>, frame: &str, child_frame: &str, 
@@ -74,18 +85,18 @@ impl IbeoPublisher {
 }
 
 pub trait VehicleStatesListener { 
-    fn on_protagonist_state<'a>(&'a mut self, protagonist: &'a Car);
-    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : &'a Vec<&'a Car>);
+    fn on_protagonist_state<'a>(&'a mut self, protagonist_pose: &'a Pose2DF64, protagonist_speed : f64, protagonist_yaw_rate: f64);
+    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicle_states : &'a Vec<IbeoVehicleState>);
 }
 
 impl VehicleStatesListener for IbeoPublisher {
 
-    fn on_protagonist_state<'a>(&'a mut self, protagonist: &'a Car) {
+    fn on_protagonist_state<'a>(&'a mut self, protagonist_pose: &'a Pose2DF64, protagonist_speed : f64, protagonist_yaw_rate: f64) {
         // transform.header.stamp = rosrust::now();
         // transform.header.frame_id = String::from("odom");
         // transform.child_frame_id = String::from("base_link");
 
-        let car_center = protagonist.pose.center;
+        let car_center = protagonist_pose.center;
         // transform.transform.translation.x = car_center.x;
         // transform.transform.translation.y = car_center.y;
 
@@ -98,7 +109,7 @@ impl VehicleStatesListener for IbeoPublisher {
         let publish_time = rosrust::now();
 
         publish_tf_trasl_euler(&mut self.tf_pub, "map", "odom", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &publish_time);
-        publish_tf_trasl_euler(&mut self.tf_pub, "odom", "base_link", car_center.x, car_center.y, 0.0, 0.0, 0.0, protagonist.pose.yaw, &publish_time);
+        publish_tf_trasl_euler(&mut self.tf_pub, "odom", "base_link", car_center.x, car_center.y, 0.0, 0.0, 0.0, protagonist_pose.yaw, &publish_time);
         publish_tf_trasl_euler(&mut self.tf_pub, "base_link", "ibeo", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &publish_time);
 
         {
@@ -121,13 +132,11 @@ impl VehicleStatesListener for IbeoPublisher {
             msg.pose.pose.position.x = car_center.x;
             msg.pose.pose.position.y = car_center.y;
 
-            msg.pose.pose.orientation.w = (protagonist.pose.yaw / 2.0).cos();
-            msg.pose.pose.orientation.z = (protagonist.pose.yaw / 2.0).sin();
+            msg.pose.pose.orientation.w = (protagonist_pose.yaw / 2.0).cos();
+            msg.pose.pose.orientation.z = (protagonist_pose.yaw / 2.0).sin();
 
-            // TODO: set speed here
-            // msg.twist.twist.linear.x = protagonist.longitudinal_speed as f64;
-
-            msg.twist.twist.angular.z = protagonist.yaw_rate as f64;
+            msg.twist.twist.linear.x = protagonist_speed;
+            msg.twist.twist.angular.z = protagonist_yaw_rate;
 
             self.protagonist_odom_pub.send(msg).unwrap();
         }
@@ -142,7 +151,7 @@ impl VehicleStatesListener for IbeoPublisher {
 
     }
 
-    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicles : &'a Vec<&'a Car>) {
+    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicle_states : &'a Vec<IbeoVehicleState>) {
         let mut msg = msg::ibeo_msgs::ObjectListEcu::default();
         msg.header.frame_id = String::from("ibeo");
         msg.header.stamp = rosrust::now();
@@ -150,23 +159,23 @@ impl VehicleStatesListener for IbeoPublisher {
 
         let protagonist_rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(-protagonist_pose.yaw));
 
-        for vehicle in vehicles {
+        for vehicle_state in vehicle_states {
             let mut object_msg = msg::ibeo_msgs::ObjectListEcuObj::default();
             // note: id is cut to i32 here
-            object_msg.id = vehicle.id as i32;
+            object_msg.id = vehicle_state.id;
 
-            let rel_center = vehicle.pose.center - protagonist_pose.center;
+            let rel_center = vehicle_state.pose.center - protagonist_pose.center;
             let rotated_rel_center = protagonist_rot.rotate_vector(rel_center);
 
             object_msg.classification = IbeoClassification::CAR as i32;
             object_msg.bounding_box.pose.x = rotated_rel_center.x;
             object_msg.bounding_box.pose.y = rotated_rel_center.y;
-            object_msg.bounding_box.pose.theta = vehicle.pose.yaw - std::f64::consts::PI / 2.0 -protagonist_pose.yaw;
-            object_msg.bounding_box.size.width = vehicle.bb_size.width;
-            object_msg.bounding_box.size.height = vehicle.bb_size.height;
+            object_msg.bounding_box.pose.theta = vehicle_state.pose.yaw - std::f64::consts::PI / 2.0 -protagonist_pose.yaw;
+            object_msg.bounding_box.size.width = vehicle_state.bb_size.width;
+            object_msg.bounding_box.size.height = vehicle_state.bb_size.height;
 
             // TODO: set speed here
-            // object_msg.abs_vel.x = vehicle.longitudinal_speed as f64;
+            object_msg.abs_vel.x = vehicle_state.longitudinal_speed;
 
             msg.objects.push(object_msg);
         }
@@ -177,26 +186,45 @@ impl VehicleStatesListener for IbeoPublisher {
 
 
 pub struct IbeoSensorSys<'a> {
-    pub vehicle_state_listeners : &'a mut Vec<Box<VehicleStatesListener>>
+    pub vehicle_state_listeners : &'a mut Vec<Box<VehicleStatesListener>>,
+    pub physics_world: &'a mut PWorld<f64>,
 }
 
 impl <'a, 'b> System<'a> for IbeoSensorSys<'b> {
     type SystemData = (
         ReadStorage<'a, Car>,
+        ReadStorage<'a, Node>,
+        ReadStorage<'a, PhysicsComponent>,
         ReadStorage<'a, ProtagonistTag>,
     );
 
-    fn run(&mut self, (mut cars, protagonists): Self::SystemData) {
-        let mut other_cars = Vec::<&Car>::new(); 
-        for (car, ()) in (&cars, !&protagonists).join() {
-            other_cars.push(car);
+    fn run(&mut self, (mut cars, nodes, physics_components, protagonists): Self::SystemData) {
+        let mut other_car_states = Vec::<IbeoVehicleState>::new(); 
+
+        for (car, node, physics_component, ()) in (&cars, &nodes, &physics_components, !&protagonists).join() {
+            let mut rigid_body = self.physics_world.rigid_body_mut(physics_component.body_handle).expect("car rigid body not found");
+            let current_speed = rigid_body.velocity().linear.norm();
+            let current_yaw_rate = rigid_body.velocity().angular;
+
+            other_car_states.push(IbeoVehicleState{
+                id: car.id as i32,
+                pose: node.pose.clone(),
+                bb_size: car.bb_size,
+                longitudinal_speed: current_speed,
+            });
         }
 
-        for (car, _protagonist) in (&cars, &protagonists).join() {
+        for (car, node, physics_component, _protagonist) in (&cars, &nodes, &physics_components, &protagonists).join() {
             let protagonist_car = car;
             for listener in &mut (self.vehicle_state_listeners).iter_mut() {
-                listener.on_vehicle_states(protagonist_car, &other_cars);
-                listener.on_protagonist_state(protagonist_car);
+                listener.on_vehicle_states(protagonist_car, &other_car_states);
+
+
+                let mut rigid_body = self.physics_world.rigid_body_mut(physics_component.body_handle).expect("car rigid body not found");
+                let current_speed = rigid_body.velocity().linear.norm();
+                let current_yaw_rate = rigid_body.velocity().angular;
+
+                listener.on_protagonist_state(&node.pose, current_speed, current_yaw_rate);
             }
         }
 

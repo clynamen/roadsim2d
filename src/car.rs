@@ -17,7 +17,7 @@ use nphysics2d::math::Velocity;
 
 
 pub fn draw_car(context: Context, graphics: &mut G2d, 
-    center: Point2f64, rot: f64, car_size: Size2f64, wheel_rot: f64, color: Color)  {
+    center: Point2f64, rot: f64, car_size: Size2f64, wheel_rot: f64, color: Color, wheel_base: f64)  {
         // note: some vector must be reversed due to the fact that piston_2d Y points toward bottom of screen
         let reverse_y_center = Point2f64{x: center.x, y: -center.y};
         let reverse_y_rot = -rot;
@@ -39,14 +39,28 @@ pub fn draw_car(context: Context, graphics: &mut G2d,
                     [0.0, -wheel_width/2.0, 
                     wheel_height, 
                     wheel_width],
-                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, -car_size.width/2.0+wheel_width).rot_rad(-wheel_rot),
+                    center.rot_rad(reverse_y_rot).trans(-wheel_base/2.0+wheel_height/2.0, -car_size.width/2.0+wheel_width),
+                    graphics);
+
+        rectangle(black, 
+                    [0.0, -wheel_width/2.0, 
+                    wheel_height, 
+                    wheel_width],
+                    center.rot_rad(reverse_y_rot).trans(-wheel_base/2.0+wheel_height/2.0, car_size.width/2.0-wheel_width),
+                    graphics);
+
+        rectangle(black, 
+                    [0.0, -wheel_width/2.0, 
+                    wheel_height, 
+                    wheel_width],
+                    center.rot_rad(reverse_y_rot).trans(wheel_base/2.0-wheel_height/2.0, -car_size.width/2.0+wheel_width).rot_rad(-wheel_rot),
                     graphics);
 
         rectangle( black, 
                     [0.0,  -wheel_width/2.0, 
                     wheel_height, 
                     wheel_width],
-                    center.rot_rad(reverse_y_rot).trans(car_size.height/2.0-wheel_height, car_size.width/2.0-wheel_width).rot_rad(-wheel_rot),
+                    center.rot_rad(reverse_y_rot).trans(wheel_base/2.0-wheel_height/2.0, car_size.width/2.0-wheel_width).rot_rad(-wheel_rot),
                     graphics);
 
 }
@@ -56,8 +70,7 @@ pub struct Car {
     pub id : u64,
     pub pose : Pose2DF64,     
     pub wheel_yaw: f32,
-    pub target_longitudinal_speed : f32, 
-    pub yaw_rate: f32,
+    pub wheel_base: f32,
     pub bb_size : Size2f64,
     pub color: Color
 }
@@ -85,7 +98,7 @@ impl Car {
 
 pub fn random_car(id_provider: &mut IdProvider) -> Car {
 
-    let bb_width = rand::thread_rng().gen_range(3.0, 6.0);
+    let bb_width : f64 = rand::thread_rng().gen_range(3.0, 6.0);
         
     return Car{
         id: id_provider.next(),
@@ -96,8 +109,7 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
             yaw: 1.0
         }, 
         wheel_yaw: rand::thread_rng().gen_range(-0.3, 0.3),
-        target_longitudinal_speed: rand::thread_rng().gen_range(5.0, 10.0), 
-        yaw_rate: 0.0,
+        wheel_base: bb_width as f32 /4.0f32*3.0f32,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()
     }
@@ -125,7 +137,7 @@ impl<'a, 'b> System<'a> for RenderCarSys<'b> {
                 // println!("node {:?} {:?}", node.pose.center, node.pose.yaw);
                 draw_car(context, graphics,
                     node.pose.center, node.pose.yaw, 
-                    car.bb_size, car.wheel_yaw as f64, car.color);
+                    car.bb_size, car.wheel_yaw as f64, car.color, car.wheel_base as f64);
             }
 
         });
@@ -147,29 +159,12 @@ impl<'a, 'b> System<'a> for UpdateCarsSys<'b> {
             let pos = rigid_body.position().translation.vector;
             let rot = rigid_body.position().rotation;
             let vel = rigid_body.velocity();
-            // node.pose.center.x = pos.x;
-            // node.pose.center.y = pos.y;
-            // node.pose.yaw = rot.unwrap().re;
-            // car.update(update_delta_time.dt);
 
             let rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(rot.unwrap().re));
-            // let ds  = Vector2{x: (self.longitudinal_speed as f64) * dt, y: 0.0};
-            // let ds  = Vector2{x: (vel.translation.x as f64) * dt, y: 0.0};
-            // let rotated_ds = rot.rotate_vector(ds);
-
-            // self.pose.center += rotated_ds;
-
             let yaw_increment = vel.linear.x as f32 / (car.bb_size.height as f32 / 2.0f32)  *  car.wheel_yaw;
 
 
-            rigid_body.set_velocity(Velocity::linear(car.target_longitudinal_speed as f64, 0.0));
-            rigid_body.set_velocity(Velocity::angular(yaw_increment as f64));
-
-
-            // let direction_to_center = Vector2{x:400.0, y:400.0} - self.pose.center.to_vec();
-            // self.pose.yaw += (yaw_increment as f64 * dt) as f64;
-            // self.pose.yaw %= 2.0*std::f64::consts::PI;
-
+            rigid_body.set_angular_velocity(yaw_increment as f64);
         }
     }
 

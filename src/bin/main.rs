@@ -112,7 +112,7 @@ fn main() {
 
     world.create_entity()
         .with(Node{pose: Pose2DF64::default() })
-        .with(make_physics_for_car(&mut physics_world, &protagonist_car))
+        .with(make_physics_for_car(&mut physics_world, &protagonist_car, &Pose2DF64::default()))
         .with(protagonist_car)
         .with(ProtagonistTag{}).build();
     world.add_resource(camera);
@@ -154,7 +154,8 @@ fn main() {
 
             SpawnNewCarSys{physics_world: &mut physics_world, vehicle_mgr: &mut vehicle_mgr}.run_now(&mut world.res);
             UpdateCarsSys{physics_world: &mut physics_world}.run_now(&mut world.res);
-            IbeoSensorSys{vehicle_state_listeners: &mut vehicle_state_listeners}.run_now(&mut world.res);
+            IbeoSensorSys{vehicle_state_listeners: &mut vehicle_state_listeners, physics_world: &mut physics_world
+                }.run_now(&mut world.res);
 
         }
 

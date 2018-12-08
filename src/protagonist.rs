@@ -43,9 +43,9 @@ impl <'a, 'b> System<'a> for ControlProtagonistSys<'b> {
 
             let mut rigid_body = self.physics_world.rigid_body_mut(physics_component.body_handle).expect("protagonist rigid body not found");
 
-            car.target_longitudinal_speed = speed;
+            let current_yaw_rate = rigid_body.velocity().angular as f32;
 
-            let yaw_increment = (yaw_rate - car.yaw_rate);  
+            let yaw_increment = (yaw_rate - current_yaw_rate);  
             let max_yaw_increment = 0.2f32;
             let yaw_increment_clamped = f32::max(-max_yaw_increment, f32::min(max_yaw_increment, yaw_increment));
 
