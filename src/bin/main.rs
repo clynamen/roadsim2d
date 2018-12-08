@@ -98,7 +98,9 @@ fn main() {
     world.register::<Camera>();
     world.register::<Grid>();
     world.register::<ProtagonistTag>();
+    world.register::<roadsim2dlib::Node>();
     world.register::<PhysicsComponent>();
+    world.register::<CarController>();
 
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
@@ -109,6 +111,7 @@ fn main() {
     let protagonist_car = vehicle_mgr.make_protagonist_car();
 
     world.create_entity()
+        .with(Node{pose: Pose2DF64::default() })
         .with(make_physics_for_car(&mut physics_world, &protagonist_car))
         .with(protagonist_car)
         .with(ProtagonistTag{}).build();
@@ -136,19 +139,21 @@ fn main() {
             };
             let window_size = fps_window.draw_size();
 
-            // physics_world.step(args.dt);
+            CarControllerSys{physics_world: &mut physics_world}.run_now(&mut world.res);
+            let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
+            ControlProtagonistSys{physics_world: &mut physics_world, target_protagonist_twist: &target_protagonist_twist_locked}.run_now(&mut world.res);
 
-            // PhysicsUpdateNodeSys{}.run_now(&mut world.res);
+            physics_world.set_timestep(args.dt);
+            physics_world.step();
 
+            PhysicsUpdateNodeSys{physics_world:  &physics_world}.run_now(&mut world.res);
             UpdateInputStateSys{}.run_now(&mut world.res);
 
             UpdateCameraSys{window_size, camera_key_mapping: &mut camera_key_mapping}.run_now(&mut world.res);
             UpdateGridSys{}.run_now(&mut world.res);
 
-            SpawnNewCarSys{vehicle_mgr: &mut vehicle_mgr}.run_now(&mut world.res);
-            let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
-            ControlProtagonistSys{target_protagonist_twist: &target_protagonist_twist_locked}.run_now(&mut world.res);
-            UpdateCarsSys.run_now(&mut world.res);
+            SpawnNewCarSys{physics_world: &mut physics_world, vehicle_mgr: &mut vehicle_mgr}.run_now(&mut world.res);
+            UpdateCarsSys{physics_world: &mut physics_world}.run_now(&mut world.res);
             IbeoSensorSys{vehicle_state_listeners: &mut vehicle_state_listeners}.run_now(&mut world.res);
 
         }

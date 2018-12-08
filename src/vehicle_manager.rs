@@ -7,9 +7,13 @@ use conrod::color::*;
 use rand::*;
 use std::boxed::Box;
 use super::input::*;
+use super::node::*;
+use super::physics::*;
+use super::primitives::*;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
+use nphysics2d::world::World as PWorld;
 
 use std::time;
 
@@ -77,7 +81,7 @@ impl VehicleManager {
                 yaw: 0.0,
             },
             wheel_yaw: 0.0,
-            longitudinal_speed: 0.0,
+            target_longitudinal_speed: 0.0,
             yaw_rate: 0.0,
             bb_size: Size2f64::new(1.5, 3.0),
             color: rgb(1.0, 0.0, 1.0),
@@ -92,7 +96,7 @@ impl VehicleManager {
                 yaw: 0.0,
             },
             wheel_yaw: 0.0,
-            longitudinal_speed: 0.0,
+            target_longitudinal_speed: 0.0,
             yaw_rate: 0.0,
             bb_size: Size2f64::new(1.5, 3.0),
             color: rgb(1.0, 0.0, 1.0),
@@ -121,16 +125,16 @@ impl VehicleManager {
         }
     }
 
-    pub fn set_protagonist_speed(&mut self, speed: f64, yaw_rate: f64) {
-        self.protagonist_vehicle.longitudinal_speed = speed as f32;
-        let yaw_increment = (yaw_rate as f32 - self.protagonist_vehicle.yaw_rate);  
-        let max_yaw_increment = 0.2f32;
-        let yaw_increment_clamped = f32::max(-max_yaw_increment, f32::min(max_yaw_increment, yaw_increment));
+    // pub fn set_protagonist_speed(&mut self, speed: f64, yaw_rate: f64) {
+    //     self.protagonist_vehicle.longitudinal_speed = speed as f32;
+    //     let yaw_increment = (yaw_rate as f32 - self.protagonist_vehicle.yaw_rate);  
+    //     let max_yaw_increment = 0.2f32;
+    //     let yaw_increment_clamped = f32::max(-max_yaw_increment, f32::min(max_yaw_increment, yaw_increment));
 
-        let new_wheel_yaw = yaw_increment / self.protagonist_vehicle.longitudinal_speed * (self.protagonist_vehicle.bb_size.height as f32 / 2.0f32);
-        println!("new wheel yaw: {} yaw_increment {}", new_wheel_yaw, yaw_increment);
-        self.protagonist_vehicle.wheel_yaw = new_wheel_yaw;
-    }
+    //     let new_wheel_yaw = yaw_increment / self.protagonist_vehicle.longitudinal_speed * (self.protagonist_vehicle.bb_size.height as f32 / 2.0f32);
+    //     println!("new wheel yaw: {} yaw_increment {}", new_wheel_yaw, yaw_increment);
+    //     self.protagonist_vehicle.wheel_yaw = new_wheel_yaw;
+    // }
 
     pub fn spawn_random_close_to_protagonist(&mut self) -> Car {
         let mut new_car = random_car(&mut *self.id_provider);
@@ -191,7 +195,8 @@ mod tests {
 
 
 pub struct SpawnNewCarSys<'a> {
-    pub vehicle_mgr: &'a mut VehicleManager
+    pub vehicle_mgr: &'a mut VehicleManager,
+    pub physics_world: &'a mut PWorld<f64>
 }
 
 
@@ -199,16 +204,35 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
     type SystemData = (
         Entities<'a>,
         WriteExpect<'a, InputState>,
+        WriteStorage<'a, Car>,
+        WriteStorage<'a, Node>,
+        WriteStorage<'a, PhysicsComponent>,
         Read<'a, LazyUpdate>
     );
 
-    fn run(&mut self, (entities, mut input_state, updater): Self::SystemData) {
+    fn run(&mut self, (entities, mut input_state, mut cars, mut nodes, mut physics_components, updater): Self::SystemData) {
+
         if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::K)) {
             let new_entity = entities.create();
+            let new_node = Node { pose: Pose2DF64{
+                center: Point2f64{x: 0.0, y: 0.0}, 
+                yaw: 0.0
+                }
+            };
             let new_car = self.vehicle_mgr.spawn_random_close_to_protagonist();
+            let new_physics = make_physics_for_car(&mut self.physics_world, &new_car);
+
             updater.insert(
                 new_entity,
-                new_car
+                new_car, 
+            );
+            updater.insert(
+                new_entity,
+                new_node, 
+            );
+            updater.insert(
+                new_entity,
+                new_physics, 
             );
         }
     }

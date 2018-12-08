@@ -8,6 +8,7 @@ use super::protagonist::*;
 use super::key_action_mapper::*;
 use super::input::*;
 use super::car::*;
+use super::node::*;
 use super::global_resources::*;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
@@ -131,17 +132,17 @@ impl <'a, 'b> System<'a> for UpdateCameraSys<'b> {
         WriteExpect<'a, InputState>,
         ReadExpect<'a, UpdateDeltaTime>, 
         WriteExpect<'a, Camera>,
-        ReadStorage<'a, Car>, 
+        ReadStorage<'a, Node>, 
         ReadStorage<'a, ProtagonistTag>, 
     );
 
 
-    fn run(&mut self, (mut input_state, update_delta_time, mut camera, cars, protagonists): Self::SystemData) {
+    fn run(&mut self, (mut input_state, update_delta_time, mut camera, nodes, protagonists): Self::SystemData) {
         camera.update_cam(update_delta_time.dt, &input_state.buttons_held, self.window_size);
         self.camera_key_mapping.process_buttons(&input_state.buttons_held, &mut camera);
 
-        for (car, protagonist) in (&cars, &protagonists).join() {
-            camera.set_target_trals(car.pose.center);
+        for (node, protagonist) in (&nodes, &protagonists).join() {
+            camera.set_target_trals(node.pose.center);
         }
 
     }

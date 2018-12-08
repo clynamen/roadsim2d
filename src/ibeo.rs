@@ -123,7 +123,10 @@ impl VehicleStatesListener for IbeoPublisher {
 
             msg.pose.pose.orientation.w = (protagonist.pose.yaw / 2.0).cos();
             msg.pose.pose.orientation.z = (protagonist.pose.yaw / 2.0).sin();
-            msg.twist.twist.linear.x = protagonist.longitudinal_speed as f64;
+
+            // TODO: set speed here
+            // msg.twist.twist.linear.x = protagonist.longitudinal_speed as f64;
+
             msg.twist.twist.angular.z = protagonist.yaw_rate as f64;
 
             self.protagonist_odom_pub.send(msg).unwrap();
@@ -161,7 +164,10 @@ impl VehicleStatesListener for IbeoPublisher {
             object_msg.bounding_box.pose.theta = vehicle.pose.yaw - std::f64::consts::PI / 2.0 -protagonist_pose.yaw;
             object_msg.bounding_box.size.width = vehicle.bb_size.width;
             object_msg.bounding_box.size.height = vehicle.bb_size.height;
-            object_msg.abs_vel.x = vehicle.longitudinal_speed as f64;
+
+            // TODO: set speed here
+            // object_msg.abs_vel.x = vehicle.longitudinal_speed as f64;
+
             msg.objects.push(object_msg);
         }
         self.ibeo_vehicle_pub.send(msg).unwrap();
