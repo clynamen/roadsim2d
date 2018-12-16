@@ -86,7 +86,7 @@ impl IbeoPublisher {
 
 pub trait VehicleStatesListener { 
     fn on_protagonist_state<'a>(&'a mut self, protagonist_pose: &'a Pose2DF64, protagonist_speed : f64, protagonist_yaw_rate: f64);
-    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicle_states : &'a Vec<IbeoVehicleState>);
+    fn on_vehicle_states<'a>(&'a mut self, protagonist_pose: &'a Pose2DF64, vehicle_states : &'a Vec<IbeoVehicleState>);
 }
 
 impl VehicleStatesListener for IbeoPublisher {
@@ -151,11 +151,10 @@ impl VehicleStatesListener for IbeoPublisher {
 
     }
 
-    fn on_vehicle_states<'a>(&'a mut self, protagonist: &'a Car, vehicle_states : &'a Vec<IbeoVehicleState>) {
+    fn on_vehicle_states<'a>(&'a mut self, protagonist_pose: &'a Pose2DF64, vehicle_states : &'a Vec<IbeoVehicleState>) {
         let mut msg = msg::ibeo_msgs::ObjectListEcu::default();
         msg.header.frame_id = String::from("ibeo");
         msg.header.stamp = rosrust::now();
-        let protagonist_pose = &protagonist.pose;
 
         let protagonist_rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(-protagonist_pose.yaw));
 
@@ -214,9 +213,10 @@ impl <'a, 'b> System<'a> for IbeoSensorSys<'b> {
         }
 
         for (car, node, physics_component, _protagonist) in (&cars, &nodes, &physics_components, &protagonists).join() {
-            let protagonist_car = car;
+            let protagonist_car_node = node;
             for listener in &mut (self.vehicle_state_listeners).iter_mut() {
-                listener.on_vehicle_states(protagonist_car, &other_car_states);
+                let protagonist_car_pose = &protagonist_car_node.pose;
+                listener.on_vehicle_states(&protagonist_car_pose, &other_car_states);
 
 
                 let mut rigid_body = self.physics_world.rigid_body_mut(physics_component.body_handle).expect("car rigid body not found");

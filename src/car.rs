@@ -68,7 +68,6 @@ pub fn draw_car(context: Context, graphics: &mut G2d,
 #[derive(Clone, Debug)]
 pub struct Car {
     pub id : u64,
-    pub pose : Pose2DF64,     
     pub wheel_yaw: f32,
     pub wheel_base: f32,
     pub bb_size : Size2f64,
@@ -81,18 +80,6 @@ impl Component for Car {
 
 
 impl Car {
-    pub fn update(self: &mut Car, dt: f64) {
-        // let rot : Basis2<_> = Rotation2::<f64>::from_angle(Rad(self.pose.yaw));
-        // let ds  = Vector2{x: (self.longitudinal_speed as f64) * dt, y: 0.0};
-        // let rotated_ds = rot.rotate_vector(ds);
-        // self.pose.center += rotated_ds;
-
-        // let yaw_increment = self.longitudinal_speed / (self.bb_size.height as f32 / 2.0f32)  *  self.wheel_yaw;
-
-        // // let direction_to_center = Vector2{x:400.0, y:400.0} - self.pose.center.to_vec();
-        // self.pose.yaw += (yaw_increment as f64 * dt) as f64;
-        // self.pose.yaw %= 2.0*std::f64::consts::PI;
-    }
 }
 
 
@@ -102,12 +89,6 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
         
     return Car{
         id: id_provider.next(),
-        pose: Pose2DF64 {
-            center: Point2f64{
-            x: rand::thread_rng().gen_range(-400.0, 400.0), 
-            y: rand::thread_rng().gen_range(-400.0, 400.0)}, 
-            yaw: 1.0
-        }, 
         wheel_yaw: rand::thread_rng().gen_range(-0.3, 0.3),
         wheel_base: bb_width as f32 /4.0f32*3.0f32,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
