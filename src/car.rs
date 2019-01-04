@@ -89,7 +89,7 @@ pub fn random_car(id_provider: &mut IdProvider) -> Car {
         
     return Car{
         id: id_provider.next(),
-        wheel_yaw: rand::thread_rng().gen_range(-0.3, 0.3),
+        wheel_yaw: rand::thread_rng().gen_range(-0.05, 0.05),
         wheel_base: bb_width as f32 /4.0f32*3.0f32,
         bb_size : Size2f64::new(bb_width/2.0, bb_width),
         color: random_color()

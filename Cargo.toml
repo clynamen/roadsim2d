@@ -20,6 +20,7 @@ ncollide2d = "0.17"
 nphysics2d = "0.9"
 specs = "0.14.0"
 specs-derive = "0.3.0"
+glium = "*"
 
 [build-dependencies]
 rosrust_codegen = "0.7.0"

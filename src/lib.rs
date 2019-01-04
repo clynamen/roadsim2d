@@ -37,6 +37,7 @@ mod protagonist;
 mod node;
 mod physics;
 mod car_controller;
+mod town;
 
 pub use std::time;
 pub use piston_window::*;
@@ -58,3 +59,4 @@ pub use self::protagonist::*;
 pub use self::node::*;
 pub use self::physics::*;
 pub use self::car_controller::*;
+pub use self::town::*;

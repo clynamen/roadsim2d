@@ -30,6 +30,7 @@ use std::time;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
@@ -104,6 +105,7 @@ fn main() {
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
     world.add_resource(UpdateDeltaTime { dt: 1.0 });
+    world.add_resource(IbeoSensorState::new());
     world.add_resource(grid);
 
 
@@ -153,8 +155,7 @@ fn main() {
 
             SpawnNewCarSys{physics_world: &mut physics_world, vehicle_mgr: &mut vehicle_mgr}.run_now(&mut world.res);
             UpdateCarsSys{physics_world: &mut physics_world}.run_now(&mut world.res);
-            IbeoSensorSys{vehicle_state_listeners: &mut vehicle_state_listeners, physics_world: &mut physics_world
-                }.run_now(&mut world.res);
+            IbeoSensorSys::new(&mut vehicle_state_listeners, &mut physics_world).run_now(&mut world.res);
 
         }
 

@@ -9,12 +9,16 @@ pub struct TwistSubscriber {
 
 impl TwistSubscriber {
 
-    pub fn new<F>(mut callback:  F) -> TwistSubscriber where F : Fn(f64, f64) -> () + Send + 'static {
+    pub fn new<F>(mut callback:  F) -> Option<TwistSubscriber> where F : Fn(f64, f64) -> () + Send + 'static {
         let twist_sub = rosrust::subscribe("roadsim2d/protagonist_twist", move |v: msg::geometry_msgs::Twist| {
             callback(v.linear.x as f64, v.angular.z as f64)
-        }).unwrap();
-        TwistSubscriber {
-            twist_sub: twist_sub
+        });
+        if twist_sub.is_ok() {
+            Some(TwistSubscriber {
+                twist_sub: twist_sub.unwrap()
+            })
+        } else {
+            None
         }
     }
 

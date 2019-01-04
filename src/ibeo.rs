@@ -7,9 +7,11 @@ use super::node::*;
 use super::msg;
 use rosrust::api::raii::Publisher;
 use cgmath::*;
+use std::collections::HashMap;
 use nphysics2d::world::World as PWorld;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
+use std::time;
 
 enum IbeoClassification {
     UNCLASSIFIED,
@@ -27,6 +29,7 @@ struct IbeoVehicleState {
     pose: Pose2DF64,
     bb_size: Size2f64,
     longitudinal_speed: f64,
+    age: i32
 }
 
 fn publish_tf_trasl_euler(tf_pub: &mut Publisher<msg::tf2_msgs::TFMessage>, frame: &str, child_frame: &str, 
@@ -167,6 +170,9 @@ impl VehicleStatesListener for IbeoPublisher {
             let rotated_rel_center = protagonist_rot.rotate_vector(rel_center);
 
             object_msg.classification = IbeoClassification::CAR as i32;
+            object_msg.age = vehicle_state.age;
+            object_msg.class_age = vehicle_state.age;
+            object_msg.classification_certainty = 1.0f32;
             object_msg.bounding_box.pose.x = rotated_rel_center.x;
             object_msg.bounding_box.pose.y = rotated_rel_center.y;
             object_msg.bounding_box.pose.theta = vehicle_state.pose.yaw - std::f64::consts::PI / 2.0 -protagonist_pose.yaw;
@@ -185,7 +191,27 @@ impl VehicleStatesListener for IbeoPublisher {
 
 pub struct IbeoSensorSys<'a> {
     pub vehicle_state_listeners : &'a mut Vec<Box<VehicleStatesListener>>,
-    pub physics_world: &'a mut PWorld<f64>,
+    pub physics_world: &'a mut PWorld<f64>
+}
+
+impl <'a> IbeoSensorSys<'a> {
+    pub fn new(vehicle_state_listeners : &'a mut Vec<Box<VehicleStatesListener>>,
+        physics_world: &'a mut PWorld<f64>) -> IbeoSensorSys<'a> {
+            IbeoSensorSys{vehicle_state_listeners: vehicle_state_listeners, 
+                          physics_world: physics_world}
+    }
+}
+
+
+pub struct IbeoSensorState {
+    age_map: HashMap<i32, i32>,
+    last_pub_time: time::Instant
+}
+
+impl IbeoSensorState {
+    pub fn new() -> IbeoSensorState {
+        IbeoSensorState{age_map: HashMap::<i32, i32>::new(), last_pub_time: time::Instant::now()}
+    }
 }
 
 impl <'a, 'b> System<'a> for IbeoSensorSys<'b> {
@@ -194,21 +220,40 @@ impl <'a, 'b> System<'a> for IbeoSensorSys<'b> {
         ReadStorage<'a, Node>,
         ReadStorage<'a, PhysicsComponent>,
         ReadStorage<'a, ProtagonistTag>,
+        WriteExpect<'a, IbeoSensorState> 
     );
 
-    fn run(&mut self, (mut cars, nodes, physics_components, protagonists): Self::SystemData) {
+
+    fn run(&mut self, (mut cars, nodes, physics_components, protagonists, mut ibeo_state): Self::SystemData) {
         let mut other_car_states = Vec::<IbeoVehicleState>::new(); 
+
+
+
+        let now = time::Instant::now();
+        let diff = now.duration_since(ibeo_state.last_pub_time);
+        let IBEO_PUB_PERIOD = time::Duration::from_millis( (1.0e3 / 30.0) as u64);
+
+        if diff > IBEO_PUB_PERIOD  {
+            ibeo_state.last_pub_time = now;
+        } else {
+            return;
+        }
 
         for (car, node, physics_component, ()) in (&cars, &nodes, &physics_components, !&protagonists).join() {
             let mut rigid_body = self.physics_world.rigid_body_mut(physics_component.body_handle).expect("car rigid body not found");
             let current_speed = rigid_body.velocity().linear.norm();
             let current_yaw_rate = rigid_body.velocity().angular;
 
+            let prev_age : i32 = *ibeo_state.age_map.entry(car.id as i32).or_insert(1);
+            let new_age = prev_age + 1;
+            ibeo_state.age_map.insert(car.id as i32, new_age);
+
             other_car_states.push(IbeoVehicleState{
                 id: car.id as i32,
                 pose: node.pose.clone(),
                 bb_size: car.bb_size,
                 longitudinal_speed: current_speed,
+                age: prev_age
             });
         }
 
