@@ -175,8 +175,8 @@ fn main() {
                 let zoom = context.transform.zoom(1.0);
             });
 
-            RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderTownSys{fps_window: &mut fps_window, town_gridmap_texture: &gridmap_texture, render_event: &e, render_args: _args}.run_now(&mut world.res);
+            RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RendererCarHighLevelControllerSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             world.maintain();

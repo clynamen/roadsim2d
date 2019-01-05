@@ -24,6 +24,8 @@ impl Component for Grid {
 //             .draw([10.0, 10.0, 10.0, 10.0], &Default::default(), transform, g);
 // }
 
+const GRID_SIZE : u32 = 200u32;
+
 impl Grid {
     pub fn new() -> Grid {
         return Grid {
@@ -62,16 +64,24 @@ impl Grid {
         } else if self.reference_zoom_level < 7.0 {
             grid_unit = 100.0;
             line_thickness = 0.5;
-        } else if self.reference_zoom_level >= 7.0 {
+        } else if self.reference_zoom_level < 12.0 {
             grid_unit = 10.0;
             line_thickness = 0.05;
+        // } else if self.reference_zoom_level >= 12.0 {
+        //     grid_unit = 1.0;
+        //     line_thickness = 0.01;
         }
 
 
         let grid_line = piston_window::Line::new([0.1, 0.1, 0.1, 1.0], line_thickness);
-        let center = context.transform.trans(-10.0* grid_unit, -10.0*grid_unit);
-        graphics::grid::Grid {cols: 200u32, rows: 200u32, units: grid_unit}.draw(&grid_line, 
+        let grid_corner_dist = GRID_SIZE as f64 /2.0 * grid_unit;
+        let center = context.transform.trans(-grid_corner_dist, -grid_corner_dist) ;
+        graphics::grid::Grid {cols: GRID_SIZE, rows: GRID_SIZE, units: grid_unit}.draw(&grid_line, 
             &context.draw_state, center, graphics);
+        let center_size = 2.0/ self.reference_zoom_level;
+        ellipse([1.0, 0.0, 0.0, 1.0], [0.0, 0.0, center_size, center_size], context.transform, graphics);
+        ellipse([1.0, 0.0, 0.0, 1.0], [0.0, 0.0, center_size, center_size], 
+            context.transform.trans(-grid_corner_dist, -grid_corner_dist), graphics);
 
     }
 }

@@ -21,7 +21,8 @@ use rand;
 pub struct CarHighLevelControllerState {
     pub destination_point: Vec2f32,
     pub path: VecDeque<Vec2f32>,
-    pub target_yaw: f32
+    pub target_yaw: f32,
+    pub target_long_speed: f32
 }
 
 impl CarHighLevelControllerState {
@@ -29,7 +30,8 @@ impl CarHighLevelControllerState {
         CarHighLevelControllerState {
             destination_point: Vec2f32::new(0f32, 0f32),
             path: VecDeque::new(),
-            target_yaw: 0f32
+            target_yaw: 0f32,
+            target_long_speed: 0f32
         }
     }
 }
@@ -60,26 +62,32 @@ impl <'a> System<'a> for CarHighLevelControllerSys {
 
             let mut rng = rand::thread_rng();
 
-            if(distance2_target < 10f32 || *destination_point == Vec2f32::new(0f32, 0f32) ) {
+            if(distance2_target < 21f32 || *destination_point == Vec2f32::new(0f32, 0f32) ) {
 
                 let random_destination_point = Vec2f32::new(
                     rng.gen_range(-TARGET_LIMIT, TARGET_LIMIT), 
                     rng.gen_range(-TARGET_LIMIT, TARGET_LIMIT));
-                match find_free_space_close_to(&town_gridmap, random_destination_point)  {
-                    Some(point) => {
-                        *destination_point = point;
-                        let shortest_path_opt = find_shortest_path(&town_gridmap, car_center, *destination_point);
-                        match shortest_path_opt {
-                            Some(shortest_path) => {
-                                println!("found shortest path");
-                                *controller_state_path = shortest_path;
-                            },
-                            None => {
 
-                            }
+                let start_point = find_free_space_close_to(&town_gridmap, car_center);
+                let end_point = find_free_space_close_to(&town_gridmap, random_destination_point);
+
+                if start_point.is_none() || end_point.is_none() {
+                    *destination_point = Vec2f32::new(0.0f32, 0.0f32)
+                } else {
+                    *destination_point = end_point.unwrap();
+                    let shortest_path_opt = find_shortest_path(&town_gridmap, start_point.unwrap(), *destination_point);
+                    match shortest_path_opt {
+                        Some(shortest_path) => {
+                            println!("found shortest path");
+                            *controller_state_path = shortest_path;
+                        },
+                        None => {
+                            controller_state.target_long_speed = 0f32;
+                            *destination_point = Vec2f32::new(0.0f32, 0.0f32)
+
                         }
-                    },
-                    None => *destination_point = Vec2f32::new(0.0f32, 0.0f32)
+                    }
+
                 }
 
 
@@ -87,14 +95,14 @@ impl <'a> System<'a> for CarHighLevelControllerSys {
             }
 
 
-            let direction_yaw = if(controller_state_path.len() > 0) {
+            let direction_yaw = if(controller_state_path.len() == 0) {
                 0f32
             } else {
                 let mut next_step_point = controller_state_path.front().unwrap();
                 let angle = Vec2f32::unit_x().angle(next_step_point - car_center).0;
 
                 let distance2_next_point = next_step_point.distance2(car_center);
-                if(distance2_next_point < 1.0f32) {
+                if(distance2_next_point < 20.0f32) {
                     controller_state_path.pop_front();
                 }
 
@@ -140,20 +148,20 @@ impl <'a, 'b> System<'a> for RendererCarHighLevelControllerSys<'b> {
                      controller_dest_point.x as f64, 
                     -controller_dest_point.y as f64);
                 ellipse( color, 
-                        [-1.0, 
-                            -1.0, 
-                            1.0, 
-                            1.0],
+                            [   0.0, 
+                                0.0, 
+                                1.0, 
+                                1.0],
                     center,
                     graphics);
 
                 for point in &controller_state.path {
                     rectangle( color, 
-                            [   -PATH_POINT_SIZE, 
-                                -PATH_POINT_SIZE, 
-                                 PATH_POINT_SIZE, 
-                                 PATH_POINT_SIZE],
-                        context.transform.trans(point.x as f64, -point.y as f64),
+                            [   0.0, 
+                                0.0, 
+                                PATH_POINT_SIZE, 
+                                PATH_POINT_SIZE],
+                        context.transform.trans(point.x as f64 - PATH_POINT_SIZE / 2.0, -point.y as f64 - PATH_POINT_SIZE / 2.0),
                         graphics);
 
                 }

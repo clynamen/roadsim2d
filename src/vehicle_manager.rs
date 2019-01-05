@@ -205,11 +205,13 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
 
                 let mut rigid_body = self.physics_world.rigid_body_mut(new_physics.body_handle).expect("protagonist rigid body not found");
 
-                let mut car_velocity = nalgebra::Vector2::<f64>::new(thread_rng().gen_range(10.0, 20.0), 0.0);
-                rigid_body.position().rotation.rotate(&mut car_velocity);
-                rigid_body.set_linear_velocity(car_velocity);
 
                 let mut car_high_level_controller_state = CarHighLevelControllerState::new();
+                car_high_level_controller_state.target_long_speed = thread_rng().gen_range(10.0, 20.0);
+
+                //let mut car_velocity = nalgebra::Vector2::<f64>::new(thread_rng().gen_range(10.0, 20.0), 0.0);
+                //rigid_body.position().rotation.rotate(&mut car_velocity);
+                //rigid_body.set_linear_velocity(car_velocity);
 
                 updater.insert(
                     new_entity,

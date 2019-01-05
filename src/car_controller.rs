@@ -23,6 +23,8 @@ pub struct CarControllerSys<'a> {
    pub physics_world: &'a mut PWorld<f64>
 }
 
+const CAR_ACC : f64 = 10.0f64;
+
 impl <'a, 'b> System<'a> for CarControllerSys<'b> {
     type SystemData = (
         ReadExpect<'a, UpdateDeltaTime>, 
@@ -60,7 +62,11 @@ impl <'a, 'b> System<'a> for CarControllerSys<'b> {
             let yaw_increment = current_speed_mag as f32 / (car.bb_size.height as f32 / 2.0f32)  *  car.wheel_yaw;
             rigid_body.set_angular_velocity(yaw_increment as f64);
 
-            let mut car_velocity = Vector2::new(current_speed_mag, 0.0);
+
+            let target_long_speed = car_high_level_controller_state.target_long_speed;
+            let speed_increment = CAR_ACC * dt * (target_long_speed as f64 - current_speed_mag).signum();
+
+            let mut car_velocity = Vector2::new(current_speed_mag + speed_increment, 0.0);
             rigid_body.position().rotation.rotate(&mut car_velocity);
             rigid_body.set_linear_velocity(car_velocity);
         }

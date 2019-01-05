@@ -41,14 +41,14 @@ pub fn vec2i32_2_vec2f32_center(v: Vec2i32) -> Vec2f32 {
 
 const TOWN_SIZE : usize = 1000usize;
 const TOWN_ZOOM : f64 = 1.0;
-const TURTLE_DRAW_RADIUS : i32 = 10;
+const TURTLE_DRAW_RADIUS : i32 = 4;
 
 fn gridmap_xy_to_world(pos: Vec2i32) -> Vec2f32 {
-    (vec2i32_2_vec2f32_center(pos)  - Vec2f32::new(TOWN_SIZE as f32 /2.032, TOWN_SIZE as f32 /2.0f32) ) / TOWN_ZOOM as f32
+    (vec2i32_2_vec2f32_center(pos)  - Vec2f32::new(TOWN_SIZE as f32 /2.0f32, TOWN_SIZE as f32 /2.0f32) ) / TOWN_ZOOM as f32
 }
 
 fn world_to_gridmap_xy(pos: Vec2f32) -> Vec2i32 {
-    vec2f32_2_vec2i32(pos * TOWN_ZOOM as f32 + Vec2f32::new(TOWN_SIZE as f32 /2.032, TOWN_SIZE as f32 /2.0f32))
+    vec2f32_2_vec2i32(pos * TOWN_ZOOM as f32 + Vec2f32::new(TOWN_SIZE as f32 /2.0f32, TOWN_SIZE as f32 /2.0f32))
 }
 
 fn gridmap_enforce_bounds(v: Vec2i32) -> Vec2i32 {
@@ -86,12 +86,14 @@ pub fn find_shortest_path(gridmap: &TownGridMap, start_point: Vec2f32, end_point
                    },
                    |&point| {
                         // absdiff(x, GOAL.0) + absdiff(y, GOAL.1)
-                        0i32
+                        vec2i32_distance2(point, end_point_grid)
+                        // 0i32
                    },
                    |&point| point == end_point_grid);
     match result {
-        Some( (points_and_dists, dist) ) => Some(points_and_dists.iter().map(| point | 
-            gridmap_xy_to_world(*point)).collect()),
+        Some( (points_and_dists, dist) ) => Some(points_and_dists.iter().map(| point |  {
+            gridmap_xy_to_world(*point)
+        }).collect()),
         None => None
     }
 }
@@ -109,8 +111,9 @@ pub fn find_free_space_close_to(gridmap: &TownGridMap, query_point: Vec2f32) -> 
 
     if closest_option.is_some() {
         let closest_grid_pos = closest_option.unwrap();
-        // let closest_point_world = gridmap_xy_to_world(duple_to_vec2i32(closest_grid_pos));
-        let closest_point_world = Vec2f32::new(closest_grid_pos.0 as f32 - 500.0f32, closest_grid_pos.1 as f32 - 500.0f32);
+        let closest_point_world = gridmap_xy_to_world(duple_to_vec2i32(closest_grid_pos));
+        // let closest_point_world = Vec2f32::new(closest_grid_pos.0 as f32 - TOWN_SIZE as f32 / 2.0f32, 
+        //                                        closest_grid_pos.1 as f32 - TOWN_SIZE as f32 / 2.0f32);
         // println!("found world: {:?} found grid: {:?}", closest_point_world, closest_grid_pos);
         Some(closest_point_world)
     } else {
@@ -120,18 +123,22 @@ pub fn find_free_space_close_to(gridmap: &TownGridMap, query_point: Vec2f32) -> 
 
 pub fn make_square_town_gridmap() -> TownGridMap {
     let mut gridmap = TownGridMap::new(TOWN_SIZE, TOWN_SIZE);
+    gridmap.enable_diagonal_mode();
 
-    for x in 0..10 {
-        for y in 0..10 {
-            gridmap.add_vertex((TOWN_SIZE as usize / 2 + x as usize, TOWN_SIZE as usize / 2 + y as usize));
+
+    for x in -0..10 {
+        for y in -0..10 {
+            gridmap.add_vertex( ( (TOWN_SIZE as i32 / 2 + x) as usize, (TOWN_SIZE as i32 / 2 + y) as usize) );
         }
-
     }
+
+
     gridmap
 }
 
 pub fn make_random_town_gridmap(seed: u32) -> TownGridMap {
     let mut gridmap = TownGridMap::new(TOWN_SIZE, TOWN_SIZE);
+    gridmap.enable_diagonal_mode();
 
     let start_point = Vec2i32::new(TOWN_SIZE as i32/ 2, TOWN_SIZE as i32/ 2);
 
@@ -170,7 +177,7 @@ pub fn make_random_town_gridmap(seed: u32) -> TownGridMap {
                 }
 
                 let rot : cgmath::Basis2<f32> = cgmath::Rotation2::<f32>::from_angle(cgmath::Rad(turtle.theta));
-                let turtle_pos_increment = rot.rotate_vector(Vec2f32::new(5.0f32, 0f32));
+                let turtle_pos_increment = rot.rotate_vector(Vec2f32::new( TURTLE_DRAW_RADIUS as f32, 0f32));
                 turtle.pos +=  vec2f32_2_vec2i32(turtle_pos_increment);
                 if rng.gen_range(0,  255) > 240 && turtle_counter < 15 {
                     let mut new_turtle = TownTurtle {pos: turtle.pos, 
@@ -190,7 +197,7 @@ pub fn make_random_town_gridmap(seed: u32) -> TownGridMap {
 fn town_gridmap_to_image(gridmap : &TownGridMap) -> ::image::RgbaImage {
     let image = ImageBuffer::from_fn(TOWN_SIZE as u32, TOWN_SIZE as u32, |x, y| {
         // let v = *gridmap.has_vertex( &(x as usize, y as usize) ) as u8;
-        let v = gridmap.has_vertex( &(x as usize, TOWN_SIZE - y as usize) ) as u8;
+        let v = gridmap.has_vertex( &(x as usize, TOWN_SIZE - 1 - y as usize) ) as u8;
         let gray_value = 30u8;
         ::image::Rgba([gray_value, gray_value, gray_value, 255u8*v])
     });

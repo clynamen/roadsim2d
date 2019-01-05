@@ -85,7 +85,7 @@ impl Car {
 
 pub fn random_car(id_provider: &mut IdProvider) -> Car {
 
-    let bb_width : f64 = rand::thread_rng().gen_range(3.0, 6.0);
+    let bb_width : f64 = rand::thread_rng().gen_range(3.0, 4.0);
         
     return Car{
         id: id_provider.next(),
