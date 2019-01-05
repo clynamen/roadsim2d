@@ -106,6 +106,7 @@ fn main() {
     world.register::<roadsim2dlib::Node>();
     world.register::<PhysicsComponent>();
     world.register::<CarController>();
+    world.register::<CarHighLevelControllerState>();
 
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
@@ -147,6 +148,7 @@ fn main() {
             };
             let window_size = fps_window.draw_size();
 
+            CarHighLevelControllerSys{}.run_now(&mut world.res);
             CarControllerSys{physics_world: &mut physics_world}.run_now(&mut world.res);
             let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
             ControlProtagonistSys{physics_world: &mut physics_world, target_protagonist_twist: &target_protagonist_twist_locked}.run_now(&mut world.res);
@@ -175,6 +177,7 @@ fn main() {
 
             RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderTownSys{fps_window: &mut fps_window, town_gridmap_texture: &gridmap_texture, render_event: &e, render_args: _args}.run_now(&mut world.res);
+            RendererCarHighLevelControllerSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             world.maintain();
 

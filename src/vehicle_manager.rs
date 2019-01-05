@@ -12,6 +12,7 @@ use super::node::*;
 use super::physics::*;
 use super::primitives::*;
 use super::car_controller::*;
+use super::car_hl_controller::*;
 use super::town::*;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
@@ -109,29 +110,6 @@ impl VehicleManager {
         }
     }
 
-    // pub fn spawn_random_close_to_protagonist(&mut self) -> Car {
-    //     let mut new_car = random_car(&mut *self.id_provider);
-
-    //     // let protagonist_trasl = self.protagonist_vehicle.pose.center;
-    //     let protagonist_trasl = Point2f64{x: 0.0, y: 0.0};
-
-    //     let mut new_car_pose = Pose2DF64::default();
-
-    //     new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(15.0, 30.0) * thread_rng().gen_range(-1, 1) as f64;
-    //     new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(15.0, 30.0) * thread_rng().gen_range(-1, 1) as f64;
-
-    //     let protagonist_ds = protagonist_trasl - new_car_pose.center;
-    //     let angle = Vec2f64::unit_x().angle(protagonist_ds);
-
-    //     new_car_pose.yaw = std::f64::consts::PI / 2.0 * angle.sin().signum() + thread_rng().gen_range(-1.0, 1.0);
-
-    //     new_car.pose = new_car_pose;
-
-    //     // self.non_playable_vehicles.push(new_car);
-    //     self.last_spawn_time = time::Instant::now();
-    //     new_car
-    // }
-
 }
 
 #[cfg(test)]
@@ -174,13 +152,15 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
         WriteStorage<'a, Node>,
         WriteStorage<'a, PhysicsComponent>,
         WriteStorage<'a, CarController>,
+        WriteStorage<'a, CarHighLevelControllerState>,
         ReadStorage<'a, ProtagonistTag>,
         ReadExpect<'a, TownGridMap>,
         Read<'a, LazyUpdate>
     );
 
     fn run(&mut self, (entities, mut input_state, mut cars, mut nodes, mut physics_components, 
-                             mut car_controllers, protagonist_tags, town_gridmap, updater): Self::SystemData) {
+                             mut car_controllers, mut car_hl_controller_states,
+                             protagonist_tags, town_gridmap, updater): Self::SystemData) {
 
         if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::K)) {
 
@@ -229,6 +209,7 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 rigid_body.position().rotation.rotate(&mut car_velocity);
                 rigid_body.set_linear_velocity(car_velocity);
 
+                let mut car_high_level_controller_state = CarHighLevelControllerState::new();
 
                 updater.insert(
                     new_entity,
@@ -245,6 +226,10 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 updater.insert(
                     new_entity,
                     CarController{}, 
+                );
+                updater.insert(
+                    new_entity,
+                    car_high_level_controller_state
                 );
 
             }

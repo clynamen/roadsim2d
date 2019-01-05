@@ -7,10 +7,8 @@ use rand::Rng;
 use piston_window::*;
 use ::image::{GenericImage, ImageBuffer};
 use super::camera::Camera;
+use super::primitives::*;
 use num::clamp;
-
-pub type Vec2i32 = cgmath::Vector2<i32>;
-pub type Vec2f32 = cgmath::Vector2<f32>;
 
 use std::ops::Index;
 use std::ops::IndexMut;
@@ -70,6 +68,32 @@ const MAX_SEARCH_ITER : i32 = 2000;
 
 fn duple_to_vec2i32(dup : (usize, usize) ) -> Vec2i32 {
     Vec2i32::new(dup.0 as i32, dup.1 as i32)
+}
+
+fn vec2i32_2_duple(vec: Vec2i32) -> (usize, usize) {
+    (vec.x as usize, vec.y as usize)
+}
+
+pub fn find_shortest_path(gridmap: &TownGridMap, start_point: Vec2f32, end_point: Vec2f32) -> Option<VecDeque<Vec2f32>> {
+    let start_point_grid = world_to_gridmap_xy_enforce_bounds(start_point);
+    let end_point_grid = world_to_gridmap_xy_enforce_bounds(end_point);
+
+    let result = pathfinding::directed::astar::astar(&start_point_grid,
+                   |&point|  {
+                       let neigh: Vec<(Vec2i32, i32)> = gridmap.neighbours(&vec2i32_2_duple(point)).iter().map(
+                           | (vert_x, vert_y) | (duple_to_vec2i32( (*vert_x, *vert_y) ), 1) ).collect();
+                        neigh
+                   },
+                   |&point| {
+                        // absdiff(x, GOAL.0) + absdiff(y, GOAL.1)
+                        0i32
+                   },
+                   |&point| point == end_point_grid);
+    match result {
+        Some( (points_and_dists, dist) ) => Some(points_and_dists.iter().map(| point | 
+            gridmap_xy_to_world(*point)).collect()),
+        None => None
+    }
 }
 
 pub fn find_free_space_close_to(gridmap: &TownGridMap, query_point: Vec2f32) -> Option<Vec2f32> {

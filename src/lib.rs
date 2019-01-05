@@ -41,6 +41,7 @@ mod protagonist;
 mod node;
 mod physics;
 mod car_controller;
+mod car_hl_controller;
 mod town;
 mod glium_tools;
 
@@ -66,3 +67,4 @@ pub use self::physics::*;
 pub use self::car_controller::*;
 pub use self::town::*;
 pub use self::glium_tools::*;
+pub use self::car_hl_controller::*;
