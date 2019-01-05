@@ -14,6 +14,10 @@ extern crate specs;
 extern crate rosrust_codegen;
 #[macro_use]
 extern crate specs_derive;
+#[macro_use]
+extern crate glium;
+extern crate num;
+extern crate pathfinding;
 
 rosmsg_include!();
 
@@ -38,6 +42,7 @@ mod node;
 mod physics;
 mod car_controller;
 mod town;
+mod glium_tools;
 
 pub use std::time;
 pub use piston_window::*;
@@ -60,3 +65,4 @@ pub use self::node::*;
 pub use self::physics::*;
 pub use self::car_controller::*;
 pub use self::town::*;
+pub use self::glium_tools::*;

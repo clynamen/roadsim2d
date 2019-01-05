@@ -12,6 +12,7 @@ use super::node::*;
 use super::physics::*;
 use super::primitives::*;
 use super::car_controller::*;
+use super::town::*;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
@@ -174,11 +175,12 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
         WriteStorage<'a, PhysicsComponent>,
         WriteStorage<'a, CarController>,
         ReadStorage<'a, ProtagonistTag>,
+        ReadExpect<'a, TownGridMap>,
         Read<'a, LazyUpdate>
     );
 
     fn run(&mut self, (entities, mut input_state, mut cars, mut nodes, mut physics_components, 
-                             mut car_controllers, protagonist_tags, updater): Self::SystemData) {
+                             mut car_controllers, protagonist_tags, town_gridmap, updater): Self::SystemData) {
 
         if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::K)) {
 
@@ -193,8 +195,24 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 let protagonist_trasl = node.pose.center;
                 let mut new_car_pose = Pose2DF64::default();
 
-                new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(10.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
-                new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
+                let mut new_car_random_search_point = Vec2f64::new(0.0, 0.0);
+                new_car_random_search_point.x = protagonist_trasl.x + thread_rng().gen_range(-20.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
+                new_car_random_search_point.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
+
+                let free_point = find_free_space_close_to(&town_gridmap, Vec2f32::new(new_car_random_search_point.x as f32,
+                     new_car_random_search_point.y as f32));
+
+
+                // new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(10.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
+                // new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
+                //println!("Free point: {:?} ", free_point);
+                if(free_point.is_some()) {
+                    new_car_pose.center.x = free_point.unwrap().x as f64;
+                    new_car_pose.center.y = free_point.unwrap().y as f64;
+                } else {
+                    println!("no freepoint in map");
+                    return
+                }
 
                 let protagonist_ds = protagonist_trasl - new_car_pose.center;
                 let angle = Vec2f64::unit_x().angle(protagonist_ds);

@@ -16,6 +16,7 @@ extern crate conrod;
 extern crate specs;
 extern crate nalgebra;
 extern crate ncollide2d;
+extern crate image;
 
 use nphysics2d::object::RigidBody;
 use nphysics2d::object::BodyHandle;
@@ -94,6 +95,10 @@ fn main() {
     let mut physics_world = PWorld::new();
     physics_world.set_gravity(Vector2::new(0.0, 0.0));
 
+    let gridmap = make_random_town_gridmap(0);
+    // let gridmap = make_square_town_gridmap();
+    let gridmap_texture = town_gridmap_to_texture(&mut fps_window, &gridmap);
+
     world.register::<Car>();
     world.register::<Camera>();
     world.register::<Grid>();
@@ -107,6 +112,7 @@ fn main() {
     world.add_resource(UpdateDeltaTime { dt: 1.0 });
     world.add_resource(IbeoSensorState::new());
     world.add_resource(grid);
+    world.add_resource(gridmap);
 
 
     let protagonist_car = vehicle_mgr.make_protagonist_car();
@@ -119,6 +125,7 @@ fn main() {
     world.add_resource(camera);
 
     print_commands();
+
 
     while let Some(e) = fps_window.next() {
         if let Some(args) = e.press_args() {
@@ -163,8 +170,11 @@ fn main() {
 
             fps_window.draw_2d(&e, |context, graphics| {
                 clear([1.0; 4], graphics);
+                let zoom = context.transform.zoom(1.0);
             });
+
             RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
+            RenderTownSys{fps_window: &mut fps_window, town_gridmap_texture: &gridmap_texture, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             world.maintain();
 
