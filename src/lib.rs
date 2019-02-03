@@ -18,6 +18,10 @@ extern crate specs_derive;
 extern crate glium;
 extern crate num;
 extern crate pathfinding;
+extern crate serde;
+extern crate serde_yaml;
+#[macro_use]
+extern crate serde_derive;
 
 rosmsg_include!();
 
@@ -47,6 +51,7 @@ mod glium_tools;
 mod fps_counter;
 mod info_renderer;
 mod car_cmd_list_controller;
+mod scenario;
 
 pub use std::time;
 pub use piston_window::*;
@@ -74,3 +79,4 @@ pub use self::car_hl_controller::*;
 pub use self::fps_counter::*;
 pub use self::info_renderer::*;
 pub use self::car_cmd_list_controller::*;
+pub use self::scenario::*;

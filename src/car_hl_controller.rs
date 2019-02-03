@@ -19,43 +19,60 @@ use rand;
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct CarHighLevelControllerState {
-    pub destination_point: Vec2f32,
-    pub path: VecDeque<Vec2f32>,
     pub target_yaw: f32,
     pub target_long_speed: f32
+}
+
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
+pub struct CarPathControllerState {
+    pub destination_point: Vec2f32,
+    pub path: VecDeque<Vec2f32>,
 }
 
 impl CarHighLevelControllerState {
     pub fn new() -> CarHighLevelControllerState {
         CarHighLevelControllerState {
-            destination_point: Vec2f32::new(0f32, 0f32),
-            path: VecDeque::new(),
             target_yaw: 0f32,
             target_long_speed: 0f32
         }
     }
 }
 
-pub struct CarHighLevelControllerSys {
+impl CarPathControllerState {
+    pub fn new() -> CarPathControllerState {
+        CarPathControllerState {
+            destination_point: Vec2f32::new(0f32, 0f32),
+            path: VecDeque::new(),
+        }
+    }
+}
+
+pub struct CarPathControllerSys {
 }
 
 const TARGET_LIMIT :f32 = 1.0e2f32;
 
-impl <'a> System<'a> for CarHighLevelControllerSys {
+impl <'a> System<'a> for CarPathControllerSys {
+
     type SystemData = (
         ReadExpect<'a, UpdateDeltaTime>, 
         ReadExpect<'a, TownGridMap>, 
         ReadStorage<'a, Node>,
         ReadStorage<'a, Car>,
-        WriteStorage<'a, CarHighLevelControllerState>
+        WriteStorage<'a, CarHighLevelControllerState>,
+        WriteStorage<'a, CarPathControllerState>
     );
 
-    fn run(&mut self, (update_delta_time, town_gridmap, nodes, cars, mut controller_states): Self::SystemData) {
+    fn run(&mut self, (update_delta_time, town_gridmap, nodes, 
+            cars, mut controller_states, mut car_path_controller): Self::SystemData) {
         let dt = update_delta_time.dt;
 
-        for (node, car, controller_state) in (&nodes, &cars, &mut controller_states).join() {
-            let mut destination_point = &mut controller_state.destination_point;
-            let mut controller_state_path = &mut controller_state.path;
+        for (node, car, controller_state, car_path_controller) in 
+                (&nodes, &cars, &mut controller_states, &mut car_path_controller).join() {
+
+            let mut destination_point = &mut car_path_controller.destination_point;
+            let mut controller_state_path = &mut car_path_controller.path;
             let car_center = vec2f64_2_vec2f32(node.pose.center.to_vec());
 
             let distance2_target = destination_point.distance2(car_center);
@@ -129,7 +146,7 @@ const PATH_POINT_SIZE : f64  = 0.2f64;
 impl <'a, 'b> System<'a> for RendererCarHighLevelControllerSys<'b> {
     type SystemData = (
         ReadStorage<'a, Car>,
-        WriteStorage<'a, CarHighLevelControllerState>,
+        WriteStorage<'a, CarPathControllerState>,
         ReadExpect<'a, Camera>
     );
 

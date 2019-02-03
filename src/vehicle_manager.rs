@@ -207,6 +207,8 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 let mut car_high_level_controller_state = CarHighLevelControllerState::new();
                 car_high_level_controller_state.target_long_speed = thread_rng().gen_range(10.0, 20.0);
 
+                let mut car_path_controller_state = CarPathControllerState::new();
+
                 updater.insert(
                     new_entity,
                     new_car, 
@@ -226,6 +228,10 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 updater.insert(
                     new_entity,
                     car_high_level_controller_state
+                );
+                updater.insert(
+                    new_entity,
+                    car_path_controller_state
                 );
 
             }

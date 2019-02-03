@@ -21,6 +21,7 @@ extern crate find_folder;
 extern crate roadsim2dlib;
 
 use roadsim2dlib::*;
+use std::env;
 use std::rc::Rc;
 
 use opengl_graphics::GlGraphics;
@@ -123,6 +124,7 @@ fn main() {
     world.register::<PhysicsComponent>();
     world.register::<CarController>();
     world.register::<CarHighLevelControllerState>();
+    world.register::<CarPathControllerState>();
     world.register::<CarCmdListState>();
 
     world.add_resource(InputEvents::new());
@@ -155,7 +157,30 @@ fn main() {
     let mut fonts = GlyphCache::new(font, (), TextureSettings::new()).expect("unable to load font");
     let mut fps_counter = FPSCounter::new();
 
-    CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone());
+    let all_args : Vec<String> = env::args().collect();
+    if all_args.len() > 1 {
+        let fname = all_args.get(1).unwrap();
+        println!("Loading scenario from {}", fname);
+        let scenario = ScenarioLoader::read_from_file(fname);
+
+        if scenario.is_ok() {
+            for car in scenario.unwrap().cars {
+
+            // let mut cmds = VecDeque::<CarActionState>::new();
+            // cmds.push_back(CarActionState{stamp:0.0, yaw:0.0, lon_vel:  0.0});
+            // cmds.push_back(CarActionState{stamp:3.0, yaw:0.0, lon_vel:  10.0});
+            // cmds.push_back(CarActionState{stamp:6.0, yaw:1.57, lon_vel:  10.0});
+            // cmds.push_back(CarActionState{stamp:9.0, yaw:3.14, lon_vel:  10.0});
+            // cmds.push_back(CarActionState{stamp:12.0, yaw:-1.57, lon_vel: 10.0});
+            
+                CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone(), 
+                car.pose, car.cmds);
+            }
+
+        }
+
+    }
+
 
     while let Some(e) = fps_window.next() {
         if let Some(args) = e.press_args() {
@@ -179,7 +204,8 @@ fn main() {
             };
             let window_size = fps_window.draw_size();
 
-            CarHighLevelControllerSys{}.run_now(&mut world.res);
+            CarPathControllerSys{}.run_now(&mut world.res);
+            CarCmdListSys{}.run_now(&mut world.res);
             CarControllerSys{physics_world: &mut physics_world}.run_now(&mut world.res);
             let target_protagonist_twist_locked = target_protagonist_twist.lock().unwrap();
             ControlProtagonistSys{physics_world: &mut physics_world, target_protagonist_twist: &target_protagonist_twist_locked}.run_now(&mut world.res);

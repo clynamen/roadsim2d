@@ -2,6 +2,7 @@ extern crate cgmath;
 extern crate rand;
 extern crate euclid;
 extern crate conrod;
+use serde::{Deserialize, Serialize};
 
 // use piston_window::*;
 use cgmath::*;
@@ -19,9 +20,17 @@ pub fn vec2f64_2_vec2f32(v: Vec2f64) -> Vec2f32 {
     Vec2f32::new(v.x as f32, v.y as f32)
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "cgmath::Point2::<f64>")]
+struct Point2f64Serde {
+    x: f64,
+    y: f64,
+}
 
-#[derive(Clone, Debug)]
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Pose2DF64 {
+   #[serde(with = "Point2f64Serde")]
    pub center: Point2f64,
    pub yaw: f64
 }
