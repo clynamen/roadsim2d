@@ -1,0 +1,28 @@
+cars: 
+    - pose:
+        yaw: 0
+        center: 
+            x: 1
+            y: -10
+      cmds:
+        - stamp: 0.0
+          lon_vel: 3.0
+          yaw: 2
+        - stamp: 0.0
+          lon_vel: 3.0
+          yaw: 0
+    - pose:
+        yaw: 0
+        center: 
+            x: -1
+            y: 10
+      cmds:
+        - stamp: 1.0
+          lon_vel: 1.0
+          yaw: 2
+        - stamp: 2.0
+          lon_vel: 2.0
+          yaw: 0
+        - stamp: 3.0
+          lon_vel: 4.0
+          yaw: -0.2
