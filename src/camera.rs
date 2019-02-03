@@ -86,7 +86,7 @@ impl Camera {
         }
 
 
-        let zoom_amount = 0.001;
+        let zoom_amount = 0.1;
         if_key! [ piston_window::Key::E : buttons { self.zoom_vel += zoom_amount; }];
         if_key! [ piston_window::Key::Q : buttons { self.zoom_vel -= zoom_amount; }];
 
@@ -106,17 +106,17 @@ impl Camera {
                 self.trans.y =  self.target_trasl.y*self.zoom +screen_height/2.0;
             }
             _ => {
-                let scroll_speed = 0.7;
-                if_key! [ piston_window::Key::Up : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed}; }];
-                if_key! [ piston_window::Key::Down : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed}; }];
-                if_key! [ piston_window::Key::Left : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed, y: 0.0}; }];
-                if_key! [ piston_window::Key::Right : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed, y: 0.0}; }];
+                let scroll_speed = 100.0;
+                if_key! [ piston_window::Key::Up : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: scroll_speed * dt}; }];
+                if_key! [ piston_window::Key::Down : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: 0.0, y: -scroll_speed * dt}; }];
+                if_key! [ piston_window::Key::Left : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: scroll_speed * dt, y: 0.0}; }];
+                if_key! [ piston_window::Key::Right : buttons { self.trans_vel = self.trans_vel + Vec2f64{x: -scroll_speed * dt, y: 0.0}; }];
                 self.trans = self.trans + self.trans_vel;
                 self.trans_vel = self.trans_vel * 0.9;
             }
         }
 
-        self.zoom *= 1.0 + self.zoom_vel;
+        self.zoom *= 1.0 + self.zoom_vel * dt;
         self.zoom_vel *= 0.9;
     }
 }

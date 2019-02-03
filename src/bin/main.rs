@@ -17,15 +17,13 @@ extern crate specs;
 extern crate nalgebra;
 extern crate ncollide2d;
 extern crate image;
-
-use nphysics2d::object::RigidBody;
-use nphysics2d::object::BodyHandle;
-use nphysics2d::world::World as PWorld;
-
-
+extern crate find_folder;
 extern crate roadsim2dlib;
 
 use roadsim2dlib::*;
+
+use opengl_graphics::GlGraphics;
+use piston_window::{OpenGL, PistonWindow, Size, WindowSettings};
 
 use std::time;
 use std::cell::RefCell;
@@ -35,7 +33,9 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
-use  nalgebra::Vector2;
+use nalgebra::Vector2;
+use opengl_graphics::GlyphCache;
+use nphysics2d::world::World as PWorld;
 
 fn print_commands() {
     let commands = r#"
@@ -48,6 +48,7 @@ arrows: move camera in 'move' mode
 "#;
     println!("{}", commands);
 }
+
 
 fn main() {
     let mut window: PistonWindow =
@@ -87,7 +88,19 @@ fn main() {
 
     let mut camera_key_mapping = build_key_mapping_for_camera_manager();
 
-    let mut fps_window = window.max_fps(30);
+    let opengl = OpenGL::V3_2;
+
+    let mut fps_window = WindowSettings::new(
+        "roadsim2d",
+        [800, 800],
+    )
+        .opengl(opengl)
+        .samples(4)
+        .exit_on_esc(true)
+        .resizable(true)
+        .build()
+        .unwrap_or_else(|error| panic!("Failed to build PistonWindow: {}", error));
+    // let mut fps_window = window.opengl(opengl).max_fps(30);
 
 
     let mut world = World::new();
@@ -98,6 +111,8 @@ fn main() {
     let gridmap = make_random_town_gridmap(0);
     // let gridmap = make_square_town_gridmap();
     let gridmap_texture = town_gridmap_to_texture(&mut fps_window, &gridmap);
+
+    let mut simulation_time = 0.0f64;
 
     world.register::<Car>();
     world.register::<Camera>();
@@ -110,7 +125,8 @@ fn main() {
 
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
-    world.add_resource(UpdateDeltaTime { dt: 1.0 });
+    world.add_resource(UpdateDeltaTime { dt: 1.0, sim_time: 0.0 });
+    world.add_resource(SimInfo::default());
     world.add_resource(IbeoSensorState::new());
     world.add_resource(grid);
     world.add_resource(gridmap);
@@ -125,7 +141,17 @@ fn main() {
         .with(ProtagonistTag{}).build();
     world.add_resource(camera);
 
+
     print_commands();
+    let mut gl = GlGraphics::new(opengl);
+
+    // let mut fonts = load_font();
+    let assets = find_folder::Search::ParentsThenKids(3, 3)
+        .for_folder("assets").unwrap();
+    println!("{:?}", assets);
+    let ref font = assets.join("FiraSans-Regular.ttf");
+    let mut fonts = GlyphCache::new(font, (), TextureSettings::new()).expect("unable to load font");
+    let mut fps_counter = FPSCounter::new();
 
 
     while let Some(e) = fps_window.next() {
@@ -144,7 +170,9 @@ fn main() {
         if let Some(args) = e.update_args() {
             let () = {
                 let mut update_delta_time = world.write_resource::<UpdateDeltaTime>();
+                simulation_time += args.dt;
                 update_delta_time.dt = args.dt;
+                update_delta_time.sim_time = simulation_time;
             };
             let window_size = fps_window.draw_size();
 
@@ -169,6 +197,11 @@ fn main() {
         }
 
         if let Some(_args) = e.render_args() {
+            let () = {
+                let mut sim_info = world.write_resource::<SimInfo>();
+                sim_info.sim_time = simulation_time;
+                sim_info.fps = fps_counter.tick() as f32;
+            };
 
             fps_window.draw_2d(&e, |context, graphics| {
                 clear([1.0; 4], graphics);
@@ -179,6 +212,7 @@ fn main() {
             RenderGridSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RendererCarHighLevelControllerSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
             RenderCarSys{fps_window: &mut fps_window, render_event: &e, render_args: _args}.run_now(&mut world.res);
+            RenderInfoSys{render_args: _args, font_glyphs: &mut fonts, opengl: &mut gl}.run_now(&mut world.res);
             world.maintain();
 
         }

@@ -44,6 +44,8 @@ mod car_controller;
 mod car_hl_controller;
 mod town;
 mod glium_tools;
+mod fps_counter;
+mod info_renderer;
 
 pub use std::time;
 pub use piston_window::*;
@@ -68,3 +70,5 @@ pub use self::car_controller::*;
 pub use self::town::*;
 pub use self::glium_tools::*;
 pub use self::car_hl_controller::*;
+pub use self::fps_counter::*;
+pub use self::info_renderer::*;
