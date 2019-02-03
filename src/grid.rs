@@ -53,7 +53,8 @@ impl Grid {
         if !self.enabled {
             return;
         }
-         let color = [0.2, 0.2, 0.2, 0.8];
+
+        let color = [0.2, 0.2, 0.2, 0.2];
 
         let grid_size = 3;
         let mut grid_unit = 1.0;

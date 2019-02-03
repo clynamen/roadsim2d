@@ -15,6 +15,8 @@ use super::car_controller::*;
 use super::car_hl_controller::*;
 use super::town::*;
 use std::collections::HashSet;
+use std::rc::Rc;
+use std::cell::RefCell;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 use nphysics2d::world::World as PWorld;
@@ -32,7 +34,7 @@ pub struct VehicleManagerKeyMapping {
 
 pub struct VehicleManager {
     // non playable vehicles
-    id_provider: Box<IdProvider>,
+    id_provider: Rc<RefCell<IdProvider>>,
     non_playable_vehicles: Vec<Car>,
     last_spawn_time: time::Instant,
 }
@@ -79,7 +81,7 @@ impl VehicleManager {
 
     pub fn make_protagonist_car(&mut self) -> Car {
         Car {
-            id: self.id_provider.next(),
+            id: self.id_provider.borrow_mut().next(),
             wheel_yaw: 0.0,
             wheel_base: 2.5,
             bb_size: Size2f64::new(1.5, 3.0),
@@ -87,7 +89,7 @@ impl VehicleManager {
         }
     }
 
-    pub fn new(mut id_provider: Box<IdProvider>) -> VehicleManager {
+    pub fn new(mut id_provider: Rc<RefCell<IdProvider>>) -> VehicleManager {
 
         let vehicle_manager = VehicleManager {
             id_provider: id_provider,
@@ -171,7 +173,7 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 let new_entity = entities.create();
 
 
-                let mut new_car = random_car(&mut self.vehicle_mgr.id_provider);
+                let mut new_car = random_car(&mut self.vehicle_mgr.id_provider.borrow_mut());
                 let protagonist_trasl = node.pose.center;
                 let mut new_car_pose = Pose2DF64::default();
 
@@ -182,10 +184,6 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
                 let free_point = find_free_space_close_to(&town_gridmap, Vec2f32::new(new_car_random_search_point.x as f32,
                      new_car_random_search_point.y as f32));
 
-
-                // new_car_pose.center.x = protagonist_trasl.x + thread_rng().gen_range(10.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
-                // new_car_pose.center.y = protagonist_trasl.y + thread_rng().gen_range(-20.0, 20.0) * thread_rng().choose(&vec![-1.0, 1.0]).unwrap();
-                //println!("Free point: {:?} ", free_point);
                 if(free_point.is_some()) {
                     new_car_pose.center.x = free_point.unwrap().x as f64;
                     new_car_pose.center.y = free_point.unwrap().y as f64;
@@ -208,10 +206,6 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
 
                 let mut car_high_level_controller_state = CarHighLevelControllerState::new();
                 car_high_level_controller_state.target_long_speed = thread_rng().gen_range(10.0, 20.0);
-
-                //let mut car_velocity = nalgebra::Vector2::<f64>::new(thread_rng().gen_range(10.0, 20.0), 0.0);
-                //rigid_body.position().rotation.rotate(&mut car_velocity);
-                //rigid_body.set_linear_velocity(car_velocity);
 
                 updater.insert(
                     new_entity,

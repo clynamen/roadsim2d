@@ -21,6 +21,7 @@ extern crate find_folder;
 extern crate roadsim2dlib;
 
 use roadsim2dlib::*;
+use std::rc::Rc;
 
 use opengl_graphics::GlGraphics;
 use piston_window::{OpenGL, PistonWindow, Size, WindowSettings};
@@ -55,9 +56,9 @@ fn main() {
         WindowSettings::new("carsim2D", [640, 480])
         .exit_on_esc(true).build().expect("Unable to create piston application");
 
-    let id_provider = Box::new(IdProvider::new());
+    let id_provider = Rc::new(RefCell::new(IdProvider::new()));
 
-    let mut vehicle_mgr = VehicleManager::new(id_provider);
+    let mut vehicle_mgr = VehicleManager::new(id_provider.clone());
     
     let mut vehicle_state_listeners : Vec<Box<VehicleStatesListener>> = Vec::new();
 
@@ -122,6 +123,7 @@ fn main() {
     world.register::<PhysicsComponent>();
     world.register::<CarController>();
     world.register::<CarHighLevelControllerState>();
+    world.register::<CarCmdListState>();
 
     world.add_resource(InputEvents::new());
     world.add_resource(InputState::new());
@@ -153,6 +155,7 @@ fn main() {
     let mut fonts = GlyphCache::new(font, (), TextureSettings::new()).expect("unable to load font");
     let mut fps_counter = FPSCounter::new();
 
+    CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone());
 
     while let Some(e) = fps_window.next() {
         if let Some(args) = e.press_args() {
