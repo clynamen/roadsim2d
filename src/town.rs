@@ -5,10 +5,12 @@ use euclid;
 use rand;
 use rand::Rng;
 use piston_window::*;
-use ::image::{GenericImage, ImageBuffer};
+use ::image::{GenericImageView, ImageBuffer};
+use ::image;
 use super::camera::Camera;
 use super::primitives::*;
 use num::clamp;
+use std::path::Path;
 
 use std::ops::Index;
 use std::ops::IndexMut;
@@ -18,13 +20,12 @@ use cgmath::Rotation;
 use specs::{System, ReadStorage, Component, ReadExpect};
 use pathfinding::grid;
 
-// pub type TownGridMap = Matrix<i32, Dynamic, Dynamic, MatrixVec<i32, Dynamic, Dynamic>>;
 pub type TownGridMap = grid::Grid;
 use num::traits::Pow;
 
-struct TownGrid {
-
-}
+const TOWN_SIZE : usize = 1000usize;
+const TOWN_ZOOM : f64 = 1.0;
+const TURTLE_DRAW_RADIUS : i32 = 4;
 
 struct TownTurtle {
     pos: Vec2i32,
@@ -38,10 +39,6 @@ pub fn vec2f32_2_vec2i32(v: Vec2f32) -> Vec2i32 {
 pub fn vec2i32_2_vec2f32_center(v: Vec2i32) -> Vec2f32 {
     Vec2f32::new(v.x as f32 + 0.5f32, v.y as f32 + 0.5f32)
 }
-
-const TOWN_SIZE : usize = 1000usize;
-const TOWN_ZOOM : f64 = 1.0;
-const TURTLE_DRAW_RADIUS : i32 = 4;
 
 fn gridmap_xy_to_world(pos: Vec2i32) -> Vec2f32 {
     (vec2i32_2_vec2f32_center(pos)  - Vec2f32::new(TOWN_SIZE as f32 /2.0f32, TOWN_SIZE as f32 /2.0f32) ) / TOWN_ZOOM as f32
@@ -133,6 +130,26 @@ pub fn make_square_town_gridmap() -> TownGridMap {
     }
 
 
+    gridmap
+}
+
+pub fn load_town_from_file(fname: &str) -> TownGridMap {
+    println!("trying to load {}", fname);
+    let img = image::open(&Path::new(fname)).ok().expect("Opening image failed");
+    let mut gridmap = TownGridMap::new(TOWN_SIZE, TOWN_SIZE);
+    let luma = img.to_luma();
+    for x in 0..TOWN_SIZE {
+        for y in 0..TOWN_SIZE {
+            let pixel_index = (x, TOWN_SIZE-y);
+            if gridmap.is_inside(&pixel_index) && luma.in_bounds(x as u32, y as u32) {
+                let fill_cell = luma.get_pixel(x as u32, y as u32).data[0] == 0;
+                if fill_cell {
+                    gridmap.add_vertex(pixel_index);
+                }
+            }
+        }
+    }
+                        // gridmap.add_vertex((mark_point.x as usize, mark_point.y as usize));
     gridmap
 }
 

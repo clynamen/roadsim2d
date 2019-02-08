@@ -11,6 +11,7 @@ use std::vec::Vec;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScriptedCar {
+    pub rgb  : (f32, f32, f32),
     pub pose : Pose2DF64,
     pub cmds : VecDeque<CarActionState>
 }
@@ -24,6 +25,7 @@ pub struct CarActionState {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Scenario {
+    pub town_image : Option<String>,
     pub cars : Vec<ScriptedCar>
 }
 

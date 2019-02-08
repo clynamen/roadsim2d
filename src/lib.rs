@@ -52,6 +52,7 @@ mod fps_counter;
 mod info_renderer;
 mod car_cmd_list_controller;
 mod scenario;
+mod cost_map_publisher;
 
 pub use std::time;
 pub use piston_window::*;
@@ -80,3 +81,4 @@ pub use self::fps_counter::*;
 pub use self::info_renderer::*;
 pub use self::car_cmd_list_controller::*;
 pub use self::scenario::*;
+pub use self::cost_map_publisher::*;

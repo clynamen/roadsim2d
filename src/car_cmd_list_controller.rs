@@ -77,14 +77,15 @@ impl CarCmdListController {
 
 
 pub fn create_car(world: &mut World, mut physics_world: &mut PWorld<f64>, 
-    mut id_provider: Rc<RefCell<IdProvider>>, first_pose: Pose2DF64, mut cmd_states : VecDeque<CarActionState>) {
+    mut id_provider: Rc<RefCell<IdProvider>>, first_pose: Pose2DF64, 
+    mut cmd_states : VecDeque<CarActionState>, car_rgb: (f32, f32, f32)) {
 
     let new_car = Car {
             id: id_provider.borrow_mut().next(),
             wheel_yaw: 0.0,
             wheel_base: 2.5,
             bb_size: Size2f64::new(1.5, 3.0),
-            color: rgb(1.0, 0.0, 1.0),
+            color: rgb(car_rgb.0, car_rgb.1, car_rgb.2),
     };
 
     let mut hl_control_state = CarHighLevelControllerState {

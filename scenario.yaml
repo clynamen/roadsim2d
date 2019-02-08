@@ -1,5 +1,7 @@
+town_image: example_town.bmp
 cars: 
-    - pose:
+    - rgb: [0.8, 0.1, 0.1]
+      pose:
         yaw: 0
         center: 
             x: 1
@@ -11,7 +13,8 @@ cars:
         - stamp: 0.0
           lon_vel: 3.0
           yaw: 0
-    - pose:
+    - rgb: [0.1, 0.5, 0.1]
+      pose:
         yaw: 0
         center: 
             x: -1

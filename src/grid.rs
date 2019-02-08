@@ -54,7 +54,7 @@ impl Grid {
             return;
         }
 
-        let color = [0.2, 0.2, 0.2, 0.2];
+        let mut color = [0.2, 0.2, 0.2, 0.2];
 
         let grid_size = 3;
         let mut grid_unit = 1.0;
@@ -74,7 +74,7 @@ impl Grid {
         }
 
 
-        let grid_line = piston_window::Line::new([0.1, 0.1, 0.1, 1.0], line_thickness);
+        let grid_line = piston_window::Line::new(color, line_thickness);
         let grid_corner_dist = GRID_SIZE as f64 /2.0 * grid_unit;
         let center = context.transform.trans(-grid_corner_dist, -grid_corner_dist) ;
         graphics::grid::Grid {cols: GRID_SIZE, rows: GRID_SIZE, units: grid_unit}.draw(&grid_line, 

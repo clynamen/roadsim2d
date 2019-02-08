@@ -53,10 +53,6 @@ arrows: move camera in 'move' mode
 
 
 fn main() {
-    let mut window: PistonWindow =
-        WindowSettings::new("carsim2D", [640, 480])
-        .exit_on_esc(true).build().expect("Unable to create piston application");
-
     let id_provider = Rc::new(RefCell::new(IdProvider::new()));
 
     let mut vehicle_mgr = VehicleManager::new(id_provider.clone());
@@ -92,7 +88,8 @@ fn main() {
 
     let opengl = OpenGL::V3_2;
 
-    let mut fps_window = WindowSettings::new(
+    let max_fps = 1000;
+    let mut fps_window : PistonWindow = WindowSettings::new(
         "roadsim2d",
         [800, 800],
     )
@@ -102,16 +99,39 @@ fn main() {
         .resizable(true)
         .build()
         .unwrap_or_else(|error| panic!("Failed to build PistonWindow: {}", error));
-    // let mut fps_window = window.opengl(opengl).max_fps(30);
-
+    // fps_window.set_max_fps(max_fps);
+    // fps_window.set_ups(20);
 
     let mut world = World::new();
 
     let mut physics_world = PWorld::new();
     physics_world.set_gravity(Vector2::new(0.0, 0.0));
 
-    let gridmap = make_random_town_gridmap(0);
-    // let gridmap = make_square_town_gridmap();
+
+    let mut scenario : Option<Scenario> = None;
+
+    let all_args : Vec<String> = env::args().collect();
+    if all_args.len() > 1 {
+        let fname = all_args.get(1).unwrap();
+        println!("Loading scenario from {}", fname);
+        let scenario_res = ScenarioLoader::read_from_file(fname);
+
+        if scenario_res.is_ok() {
+            scenario = Some(scenario_res.unwrap());
+        }
+    }
+
+    let gridmap = if scenario.is_some() {
+        let town_image = &scenario.as_ref().unwrap().town_image;
+        if  town_image.is_some() {
+            load_town_from_file(&town_image.as_ref().unwrap().as_str())
+        } else {
+            make_random_town_gridmap(0)
+        }
+    } else {
+        make_random_town_gridmap(0)
+    };
+
     let gridmap_texture = town_gridmap_to_texture(&mut fps_window, &gridmap);
 
     let mut simulation_time = 0.0f64;
@@ -158,28 +178,29 @@ fn main() {
     let mut fps_counter = FPSCounter::new();
 
     let all_args : Vec<String> = env::args().collect();
-    if all_args.len() > 1 {
-        let fname = all_args.get(1).unwrap();
-        println!("Loading scenario from {}", fname);
-        let scenario = ScenarioLoader::read_from_file(fname);
 
-        if scenario.is_ok() {
-            for car in scenario.unwrap().cars {
-
-            // let mut cmds = VecDeque::<CarActionState>::new();
-            // cmds.push_back(CarActionState{stamp:0.0, yaw:0.0, lon_vel:  0.0});
-            // cmds.push_back(CarActionState{stamp:3.0, yaw:0.0, lon_vel:  10.0});
-            // cmds.push_back(CarActionState{stamp:6.0, yaw:1.57, lon_vel:  10.0});
-            // cmds.push_back(CarActionState{stamp:9.0, yaw:3.14, lon_vel:  10.0});
-            // cmds.push_back(CarActionState{stamp:12.0, yaw:-1.57, lon_vel: 10.0});
-            
-                CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone(), 
-                car.pose, car.cmds);
-            }
-
+    if scenario.is_some() {
+        for car in scenario.unwrap().cars {
+            CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone(), 
+            car.pose, car.cmds, car.rgb);
         }
-
     }
+
+    // if all_args.len() > 1 {
+        // let fname = all_args.get(1).unwrap();
+        // println!("Loading scenario from {}", fname);
+        // let scenario = ScenarioLoader::read_from_file(fname);
+        // town_image_fname = scenario.town_image;
+
+        // if scenario.is_ok() {
+        //     for car in scenario.unwrap().cars {
+        //         CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone(), 
+        //         car.pose, car.cmds, car.rgb);
+        //     }
+
+        // }
+
+    // }
 
 
     while let Some(e) = fps_window.next() {
