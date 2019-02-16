@@ -24,9 +24,15 @@ pub struct CarActionState {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct InitialPose {
+    pub pose : Pose2DF64
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Scenario {
     pub town_image : Option<String>,
-    pub cars : Vec<ScriptedCar>
+    pub cars : Vec<ScriptedCar>,
+    pub protagonist_car_init : Option<InitialPose>
 }
 
 pub struct ScenarioLoader {

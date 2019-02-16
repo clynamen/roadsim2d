@@ -51,6 +51,39 @@ arrows: move camera in 'move' mode
     println!("{}", commands);
 }
 
+fn evaluate_protagonist_car_init_pose()->Pose2DF64{
+    let mut scenario : Option<Scenario> = None;
+
+    let all_args : Vec<String> = env::args().collect();
+    if all_args.len() > 1 {
+        let fname = all_args.get(1).unwrap();
+        println!("Loading scenario from {} for car_init_pose", fname);
+        let scenario_res = ScenarioLoader::read_from_file(fname);
+
+        if scenario_res.is_ok() {
+            scenario = Some(scenario_res.unwrap());
+        }
+    };
+
+    let init_pose = if scenario.is_some() {
+	let protagonist_car_init_pose = scenario.unwrap().protagonist_car_init.unwrap().pose;
+        let pose = Pose2DF64{
+	    center: Point2f64{
+		  x: protagonist_car_init_pose.center.x,
+		  y: protagonist_car_init_pose.center.y
+	    },
+	    yaw: protagonist_car_init_pose.yaw
+	};
+	println!("Pose x: {}, y: {}, yaw: {}", pose.center.x, pose.center.y, pose.yaw);
+	pose
+    }
+    else {
+	println!("Default pose");
+        Pose2DF64::default()
+    };
+    init_pose    
+}
+
 
 fn main() {
     let id_provider = Rc::new(RefCell::new(IdProvider::new()));
@@ -113,7 +146,7 @@ fn main() {
     let all_args : Vec<String> = env::args().collect();
     if all_args.len() > 1 {
         let fname = all_args.get(1).unwrap();
-        println!("Loading scenario from {}", fname);
+        println!("Loading scenario from {} for gridmap", fname);
         let scenario_res = ScenarioLoader::read_from_file(fname);
 
         if scenario_res.is_ok() {
@@ -124,11 +157,14 @@ fn main() {
     let gridmap = if scenario.is_some() {
         let town_image = &scenario.as_ref().unwrap().town_image;
         if  town_image.is_some() {
+	    println!("Loading image from scenario");
             load_town_from_file(&town_image.as_ref().unwrap().as_str())
         } else {
+	    println!("Generating random image");
             make_random_town_gridmap(0)
         }
     } else {
+        println!("Generating random image because scenario not ok");
         make_random_town_gridmap(0)
     };
 
@@ -159,8 +195,8 @@ fn main() {
     let protagonist_car = vehicle_mgr.make_protagonist_car();
 
     world.create_entity()
-        .with(Node{pose: Pose2DF64::default() })
-        .with(make_physics_for_car(&mut physics_world, &protagonist_car, &Pose2DF64::default()))
+        .with(Node{pose: evaluate_protagonist_car_init_pose()})
+        .with(make_physics_for_car(&mut physics_world, &protagonist_car, &evaluate_protagonist_car_init_pose()))
         .with(protagonist_car)
         .with(ProtagonistTag{}).build();
     world.add_resource(camera);
@@ -178,8 +214,18 @@ fn main() {
     let mut fps_counter = FPSCounter::new();
 
     let all_args : Vec<String> = env::args().collect();
+    if all_args.len() > 1 {
+        let fname = all_args.get(1).unwrap();
+        println!("Loading scenario from {} for cars", fname);
+        let scenario_res = ScenarioLoader::read_from_file(fname);
+
+        if scenario_res.is_ok() {
+            scenario = Some(scenario_res.unwrap());
+        }
+    }
 
     if scenario.is_some() {
+	println!("Scenario ok, taking the cars..");
         for car in scenario.unwrap().cars {
             CarCmdListController::create_car(&mut world, &mut physics_world, id_provider.clone(), 
             car.pose, car.cmds, car.rgb);

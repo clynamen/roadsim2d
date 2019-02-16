@@ -1,31 +1,52 @@
-town_image: example_town.bmp
+town_image: crossRoad.bmp
+protagonist_car_init: 
+      pose:
+        yaw: 0
+        center: 
+            x: -70
+            y: 0
 cars: 
     - rgb: [0.8, 0.1, 0.1]
       pose:
-        yaw: 0
+        yaw: 1.57
         center: 
-            x: 1
-            y: -10
+            x: -35
+            y: -40
       cmds:
         - stamp: 0.0
-          lon_vel: 3.0
-          yaw: 2
-        - stamp: 0.0
-          lon_vel: 3.0
-          yaw: 0
+          lon_vel: 20.0
+          yaw: 1.57
+
     - rgb: [0.1, 0.5, 0.1]
       pose:
-        yaw: 0
+        yaw: -1.57
         center: 
-            x: -1
-            y: 10
+            x: -45
+            y: 40
       cmds:
         - stamp: 1.0
-          lon_vel: 1.0
-          yaw: 2
-        - stamp: 2.0
-          lon_vel: 2.0
-          yaw: 0
-        - stamp: 3.0
-          lon_vel: 4.0
-          yaw: -0.2
+          lon_vel: 20.0
+          yaw: -1.57
+    - rgb: [0.1, 0.1, 0.9]
+      pose:
+        yaw: 1.57
+        center: 
+            x: -35
+            y: -100
+      cmds:
+        - stamp: 0.0
+          lon_vel: 25.0
+          yaw: 1.57
+
+    - rgb: [0.9, 0.9, 0.1]
+      pose:
+        yaw: -1.57
+        center: 
+            x: -45
+            y: 100
+      cmds:
+        - stamp: 0.0
+          lon_vel: 25.0
+          yaw: -1.57
+
+
