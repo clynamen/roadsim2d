@@ -15,6 +15,7 @@ use cgmath::EuclideanSpace;
 use piston_window::*;
 use rand::Rng;
 use rand;
+use conrod::color::*;
 
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
@@ -81,9 +82,31 @@ impl <'a> System<'a> for CarPathControllerSys {
 
             if(distance2_target < 21f32 || *destination_point == Vec2f32::new(0f32, 0f32) ) {
 
-                let random_destination_point = Vec2f32::new(
-                    rng.gen_range(-TARGET_LIMIT, TARGET_LIMIT), 
-                    rng.gen_range(-TARGET_LIMIT, TARGET_LIMIT));
+                let random_destination_point = if(car.color == rgb(0.9, 0.9, 0.1) && node.pose.yaw > 0.0){
+			Vec2f32::new(
+	                    -45.0, 
+        	            -40.0)
+		}else if (car.color == rgb(0.9, 0.9, 0.1) && node.pose.yaw < 0.0)
+		{
+			Vec2f32::new(
+	                    -45.0, 
+        	            40.0)
+		}else if (car.color == rgb(0.1, 0.1, 0.9) && node.pose.yaw < 0.0)
+		{
+			Vec2f32::new(
+	                    -35.0, 
+        	            40.0)
+		}else if (car.color == rgb(0.1, 0.1, 0.9) && node.pose.yaw > 0.0)
+		{
+			Vec2f32::new(
+	                    -35.0, 
+        	            -40.0)
+		}else
+		{
+			Vec2f32::new(
+	                    rng.gen_range(-TARGET_LIMIT, TARGET_LIMIT), 
+        	            rng.gen_range(-TARGET_LIMIT, TARGET_LIMIT))
+		};
 
                 let start_point = find_free_space_close_to(&town_gridmap, car_center);
                 let end_point = find_free_space_close_to(&town_gridmap, random_destination_point);

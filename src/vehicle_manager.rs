@@ -20,6 +20,7 @@ use std::cell::RefCell;
 use specs::{System, DispatcherBuilder, World, Builder, ReadStorage, WriteStorage,
  Read, ReadExpect, WriteExpect, RunNow, Entities, LazyUpdate, Join, VecStorage, Component};
 use nphysics2d::world::World as PWorld;
+use conrod::color::*;
 
 use std::time;
 
@@ -104,6 +105,16 @@ impl VehicleManager {
 
         if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::K) ) {
             let action = vehicle_manager_key_mappings.key_action_map.get_mut(&piston_window::Key::K);
+            action.unwrap().debounce(self);
+        }
+
+        if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::A) ) {
+            let action = vehicle_manager_key_mappings.key_action_map.get_mut(&piston_window::Key::A);
+            action.unwrap().debounce(self);
+        }
+
+        if buttons.contains( &piston_window::Button::Keyboard(piston_window::Key::P) ) {
+            let action = vehicle_manager_key_mappings.key_action_map.get_mut(&piston_window::Key::P);
             action.unwrap().debounce(self);
         }
 
@@ -237,5 +248,150 @@ impl <'a, 'b> System<'a> for SpawnNewCarSys<'b> {
             }
 
         }
+
+	if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::A)) {
+
+            for (node, car, _protagonist) in (&nodes, &cars, &protagonist_tags).join() {
+                let protagonist_car = car;
+                let protagonist_node = node;
+
+                let new_entity = entities.create();
+
+                let mut new_car = random_car(&mut self.vehicle_mgr.id_provider.borrow_mut());
+
+		new_car.color = rgb(0.9, 0.9, 0.1);
+
+                let mut new_car_pose = Pose2DF64{
+		    center: Point2f64{
+			  x: -45.0,
+			  y: 40.0
+		    },
+		    yaw: 1.57
+		};
+
+                let free_point = find_free_space_close_to(&town_gridmap, Vec2f32::new(new_car_pose.center.x as f32,
+                     new_car_pose.center.y as f32));
+
+                if(free_point.is_some()) {
+                    new_car_pose.center.x = free_point.unwrap().x as f64;
+                    new_car_pose.center.y = free_point.unwrap().y as f64;
+                } else {
+                    println!("no freepoint in map");
+                    return
+                }
+
+                let new_node = Node { pose: new_car_pose };
+
+                let new_physics = make_physics_for_car(&mut self.physics_world, &new_car, &new_node.pose);
+
+                let mut rigid_body = self.physics_world.rigid_body_mut(new_physics.body_handle).expect("protagonist rigid body not found");
+
+
+                let mut car_high_level_controller_state = CarHighLevelControllerState::new();
+                car_high_level_controller_state.target_long_speed = thread_rng().gen_range(10.0, 20.0);
+
+                let mut car_path_controller_state = CarPathControllerState::new();
+
+                updater.insert(
+                    new_entity,
+                    new_car, 
+                );
+                updater.insert(
+                    new_entity,
+                    new_node, 
+                );
+                updater.insert(
+                    new_entity,
+                    new_physics, 
+                );
+                updater.insert(
+                    new_entity,
+                    CarController{}, 
+                );
+                updater.insert(
+                    new_entity,
+                    car_high_level_controller_state
+                );
+                updater.insert(
+                    new_entity,
+                    car_path_controller_state
+                );
+
+            }
+
+        }
+
+	if input_state.buttons_pressed.contains(&piston_window::Button::Keyboard(piston_window::Key::P)) {
+
+            for (node, car, _protagonist) in (&nodes, &cars, &protagonist_tags).join() {
+                let protagonist_car = car;
+                let protagonist_node = node;
+
+                let new_entity = entities.create();
+
+                let mut new_car = random_car(&mut self.vehicle_mgr.id_provider.borrow_mut());
+
+		new_car.color = rgb(0.1, 0.1, 0.9);
+
+                let mut new_car_pose = Pose2DF64{
+		    center: Point2f64{
+			  x: -35.0,
+			  y: -40.0
+		    },
+		    yaw: -1.57
+		};
+
+                let free_point = find_free_space_close_to(&town_gridmap, Vec2f32::new(new_car_pose.center.x as f32,
+                     new_car_pose.center.y as f32));
+
+                if(free_point.is_some()) {
+                    new_car_pose.center.x = free_point.unwrap().x as f64;
+                    new_car_pose.center.y = free_point.unwrap().y as f64;
+                } else {
+                    println!("no freepoint in map");
+                    return
+                }
+
+                let new_node = Node { pose: new_car_pose };
+
+                let new_physics = make_physics_for_car(&mut self.physics_world, &new_car, &new_node.pose);
+
+                let mut rigid_body = self.physics_world.rigid_body_mut(new_physics.body_handle).expect("protagonist rigid body not found");
+
+
+                let mut car_high_level_controller_state = CarHighLevelControllerState::new();
+                car_high_level_controller_state.target_long_speed = thread_rng().gen_range(10.0, 20.0);
+
+                let mut car_path_controller_state = CarPathControllerState::new();
+
+                updater.insert(
+                    new_entity,
+                    new_car, 
+                );
+                updater.insert(
+                    new_entity,
+                    new_node, 
+                );
+                updater.insert(
+                    new_entity,
+                    new_physics, 
+                );
+                updater.insert(
+                    new_entity,
+                    CarController{}, 
+                );
+                updater.insert(
+                    new_entity,
+                    car_high_level_controller_state
+                );
+                updater.insert(
+                    new_entity,
+                    car_path_controller_state
+                );
+
+            }
+
+        }
+
     }
 }

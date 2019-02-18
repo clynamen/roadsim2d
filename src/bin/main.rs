@@ -45,6 +45,8 @@ q:      zoom_out
 e:      zoom_in
 c:      switch camera mode (move/follow)
 k:      spawn vehicle
+a:	spawn vehicle that goes up/down
+p:	spawn vehicle that goes down/up
 g:      hide/show grid
 arrows: move camera in 'move' mode
 "#;
